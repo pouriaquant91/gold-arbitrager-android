@@ -15,6 +15,7 @@ class PublicFeedMarketRepository : MarketRepository {
         val failed = mutableListOf<String>()
 
         load("بازار", ::fetchBaazar)?.let(quotes::add) ?: failed.add("بازار")
+        load("گلدیس", ::fetchGoldis)?.let(quotes::add) ?: failed.add("گلدیس")
         load("اکوگلد", ::fetchEcogold)?.let(quotes::add) ?: failed.add("اکوگلد")
         load("میلی", ::fetchMilli)?.let(quotes::add) ?: failed.add("میلی")
         load("زرافزا", ::fetchZarafza)?.let(quotes::add) ?: failed.add("زرافزا")
@@ -89,6 +90,27 @@ class PublicFeedMarketRepository : MarketRepository {
         )
     }
 
+    private fun fetchGoldis(): MarketQuote {
+        val data = getJson("https://goldis.ir/price/api/v1/price/assets/gold18k/final-prices")
+            .getJSONObject("data")
+        return MarketQuote(
+            venueId = "goldis",
+            venueName = "گلدیس",
+            monogram = "گ",
+            askTomanPerGram = data.getDouble("final_buy_price") / 10,
+            bidTomanPerGram = data.getDouble("final_sell_price") / 10,
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفهٔ نهایی؛ fee در بررسی",
+            feeLabel = "جهت و واحد از کلاینت رسمی استخراج شد؛ شمول fee و timestamp ISO باید تأیید شود",
+            sourceLabel = "REST عمومی کشف‌شده",
+            sourceTimestamp = listOf(
+                data.optString("last_update_date"),
+                data.optString("last_update_time"),
+            ).filter(String::isNotBlank).joinToString(" ").ifBlank { null },
+            accent = 0xFF7DC8A5,
+        )
+    }
+
     private fun fetchMilli(): MarketQuote {
         val data = getJson("https://milli.gold/api/v1/public/milli-price/external").getJSONObject("data")
         return MarketQuote(
@@ -159,4 +181,3 @@ class PublicFeedMarketRepository : MarketRepository {
         )
     }
 }
-
