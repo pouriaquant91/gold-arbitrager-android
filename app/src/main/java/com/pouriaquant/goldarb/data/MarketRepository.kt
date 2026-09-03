@@ -1,0 +1,162 @@
+package com.pouriaquant.goldarb.data
+
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.time.Instant
+
+interface MarketRepository {
+    fun refresh(): MarketSnapshot
+}
+
+class PublicFeedMarketRepository : MarketRepository {
+    override fun refresh(): MarketSnapshot {
+        val quotes = mutableListOf<MarketQuote>()
+        val failed = mutableListOf<String>()
+
+        load("بازار", ::fetchBaazar)?.let(quotes::add) ?: failed.add("بازار")
+        load("اکوگلد", ::fetchEcogold)?.let(quotes::add) ?: failed.add("اکوگلد")
+        load("میلی", ::fetchMilli)?.let(quotes::add) ?: failed.add("میلی")
+        load("زرافزا", ::fetchZarafza)?.let(quotes::add) ?: failed.add("زرافزا")
+        load("مهربان‌گلد", ::fetchMehrban)?.let(quotes::add) ?: failed.add("مهربان‌گلد")
+        load("گرامینو", ::fetchGeramino)?.let(quotes::add) ?: failed.add("گرامینو")
+
+        return MarketSnapshot(
+            quotes = quotes.sortedWith(compareBy({ it.quality.ordinal }, { it.venueName })),
+            receivedAt = Instant.now().toString(),
+            failedVenueNames = failed,
+        )
+    }
+
+    private fun load(name: String, block: () -> MarketQuote): MarketQuote? =
+        try {
+            block()
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun getJson(url: String): JSONObject {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 8_000
+            readTimeout = 8_000
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("User-Agent", "GoldArbitrager-Android/0.1")
+            instanceFollowRedirects = true
+        }
+        return try {
+            require(connection.responseCode in 200..299) { "upstream-${connection.responseCode}" }
+            connection.inputStream.bufferedReader().use { JSONObject(it.readText()) }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun fetchBaazar(): MarketQuote {
+        val data = getJson("https://api.baazar.ir/landing/v1/price").getJSONObject("data")
+        return MarketQuote(
+            venueId = "baazar",
+            venueName = "بازار",
+            monogram = "ب",
+            askTomanPerGram = data.getDouble("buyPrice") / 10,
+            bidTomanPerGram = data.getDouble("sellPrice") / 10,
+            quality = QuoteQuality.COMPARABLE,
+            qualityLabel = "دوطرفه زنده",
+            feeLabel = "قیمت نهایی endpoint؛ بدون افزودن fee ساختگی",
+            sourceLabel = "REST رسمی",
+            sourceTimestamp = data.optLong("currentTime").takeIf { it > 0 }?.let(Instant::ofEpochMilli)?.toString(),
+            accent = 0xFF8EB8E7,
+        )
+    }
+
+    private fun fetchEcogold(): MarketQuote {
+        val rows = getJson("https://backend.ecogold.ir/api/prices/otc").getJSONArray("data")
+        val row = (0 until rows.length())
+            .map { rows.getJSONObject(it) }
+            .single { it.getString("symbol") == "GOLD18-IRT" }
+        return MarketQuote(
+            venueId = "ecogold",
+            venueName = "اکوگلد",
+            monogram = "ا",
+            askTomanPerGram = row.getDouble("buy_price"),
+            bidTomanPerGram = row.getDouble("sell_price"),
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفه؛ fee در انتظار تأیید",
+            feeLabel = "کارمزد خرید ۰٫۵٪ اعلام شده؛ شمول در نرخ و fee فروش باید با preview تأیید شود",
+            sourceLabel = "REST رسمی",
+            sourceTimestamp = row.optString("created_at").takeIf(String::isNotBlank),
+            accent = 0xFF76C9A2,
+        )
+    }
+
+    private fun fetchMilli(): MarketQuote {
+        val data = getJson("https://milli.gold/api/v1/public/milli-price/external").getJSONObject("data")
+        return MarketQuote(
+            venueId = "milli",
+            venueName = "میلی",
+            monogram = "م",
+            referenceTomanPerGram = data.getDouble("price18") * 100,
+            quality = QuoteQuality.REFERENCE_ONLY,
+            qualityLabel = "تک‌نرخ رسمی",
+            feeLabel = "بیش از ۲۰۰mg: کارمزد ۰٫۵٪ هر سمت؛ bid/ask فقط پس از preview معتبر است",
+            sourceLabel = "REST رسمی",
+            sourceTimestamp = data.optString("date").takeIf(String::isNotBlank),
+            accent = 0xFFF4C862,
+            buyCommissionRate = 0.005,
+            sellCommissionRate = 0.005,
+            pricesIncludeCommission = false,
+        )
+    }
+
+    private fun fetchZarafza(): MarketQuote {
+        val gold = getJson("https://api.zarafza.com/v2/prices")
+            .getJSONObject("data").getJSONObject("G18")
+        return MarketQuote(
+            venueId = "zarafza",
+            venueName = "زرافزا",
+            monogram = "ز",
+            askTomanPerGram = gold.getJSONObject("sell").getDouble("price"),
+            bidTomanPerGram = gold.getJSONObject("buy").getDouble("price"),
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفه؛ بدون زمان منبع",
+            feeLabel = "قیمت نهایی اعلامی؛ timestamp منبع منتشر نشده",
+            sourceLabel = "REST رسمی",
+            accent = 0xFFC59670,
+        )
+    }
+
+    private fun fetchMehrban(): MarketQuote {
+        val payload = getJson("https://mehrban.gold/api/config/goldprice?isSite=true")
+        require(payload.optBoolean("isSuccess"))
+        val data = payload.getJSONObject("data")
+        return MarketQuote(
+            venueId = "mehrban-gold",
+            venueName = "مهربان‌گلد",
+            monogram = "م",
+            askTomanPerGram = data.getDouble("buy"),
+            bidTomanPerGram = data.getDouble("sell"),
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفه؛ بدون زمان منبع",
+            feeLabel = "شمول fee و timestamp نیازمند تأیید مستقیم",
+            sourceLabel = "REST رسمی",
+            accent = 0xFFD7A173,
+        )
+    }
+
+    private fun fetchGeramino(): MarketQuote {
+        val data = getJson("https://api.geramino.com/gold").getJSONObject("gold_data")
+        return MarketQuote(
+            venueId = "geramino",
+            venueName = "گرامینو",
+            monogram = "گ",
+            askTomanPerGram = data.getDouble("buy_price"),
+            bidTomanPerGram = data.getDouble("sell_price"),
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفه؛ بدون زمان منبع",
+            feeLabel = "قیمت نهایی endpoint؛ timestamp منبع منتشر نشده",
+            sourceLabel = "REST رسمی",
+            accent = 0xFF91B9DC,
+        )
+    }
+}
+
