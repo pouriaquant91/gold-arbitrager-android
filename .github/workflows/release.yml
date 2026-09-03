@@ -25,12 +25,12 @@ jobs:
       - name: Test and build installable beta APK
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
       - name: Prepare release asset
-        run: cp app/build/outputs/apk/debug/app-debug.apk GoldArbitrager-android-v0.2.0-beta.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk "GoldArbitrager-${GITHUB_REF_NAME}-beta.apk"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
-          GoldArbitrager-android-v0.2.0-beta.apk
-          --title "Gold Arbitrager Android 0.2.0 Beta"
+          "GoldArbitrager-${GITHUB_REF_NAME}-beta.apk"
+          --title "Gold Arbitrager ${GITHUB_REF_NAME} Beta"
           --notes "نسخه آزمایشی قابل نصب؛ شامل رابط RTL، محاسبه هزینه کامل و اعتبارسنجی timestamp جلالی گلدیس. این نسخه سفارش واقعی ارسال نمی‌کند."

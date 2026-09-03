@@ -8,11 +8,11 @@ object IranDateTime {
     private val iranOffset = ZoneOffset.ofHoursMinutes(3, 30)
 
     fun jalaliToIso(rawDate: String?, rawTime: String?): String? {
-        val date = normalizeDigits(rawDate.orEmpty()).trim()
-            .matchEntire(Regex("^(\\d{4})[/-](\\d{1,2})[/-](\\d{1,2})$"))
+        val date = Regex("^(\\d{4})[/-](\\d{1,2})[/-](\\d{1,2})$")
+            .matchEntire(normalizeDigits(rawDate.orEmpty()).trim())
             ?: return null
-        val time = normalizeDigits(rawTime.orEmpty()).trim()
-            .matchEntire(Regex("^(\\d{1,2}):(\\d{2}):(\\d{2})$"))
+        val time = Regex("^(\\d{1,2}):(\\d{2}):(\\d{2})$")
+            .matchEntire(normalizeDigits(rawTime.orEmpty()).trim())
             ?: return null
         val (jy, jm, jd) = date.destructured.toList().map(String::toInt)
         val (hour, minute, second) = time.destructured.toList().map(String::toInt)
