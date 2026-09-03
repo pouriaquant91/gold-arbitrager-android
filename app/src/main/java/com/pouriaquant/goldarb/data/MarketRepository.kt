@@ -93,20 +93,23 @@ class PublicFeedMarketRepository : MarketRepository {
     private fun fetchGoldis(): MarketQuote {
         val data = getJson("https://goldis.ir/price/api/v1/price/assets/gold18k/final-prices")
             .getJSONObject("data")
+        val receivedAt = Instant.now()
+        val sourceTimestamp = IranDateTime.jalaliToIso(
+            data.optString("last_update_date"),
+            data.optString("last_update_time"),
+        )
+        val isFresh = IranDateTime.isFresh(sourceTimestamp, receivedAt)
         return MarketQuote(
             venueId = "goldis",
             venueName = "گلدیس",
             monogram = "گ",
             askTomanPerGram = data.getDouble("final_buy_price") / 10,
             bidTomanPerGram = data.getDouble("final_sell_price") / 10,
-            quality = QuoteQuality.QUARANTINED,
-            qualityLabel = "دوطرفهٔ نهایی؛ fee در بررسی",
-            feeLabel = "جهت و واحد از کلاینت رسمی استخراج شد؛ شمول fee و timestamp ISO باید تأیید شود",
+            quality = if (isFresh) QuoteQuality.COMPARABLE else QuoteQuality.QUARANTINED,
+            qualityLabel = if (isFresh) "دوطرفهٔ نهایی و تازه" else "دوطرفه؛ timestamp نامعتبر یا کهنه",
+            feeLabel = "طبق FAQ رسمی کارمزد معامله صفر است؛ اختلاف در قیمت‌های نهایی دیده می‌شود",
             sourceLabel = "REST عمومی کشف‌شده",
-            sourceTimestamp = listOf(
-                data.optString("last_update_date"),
-                data.optString("last_update_time"),
-            ).filter(String::isNotBlank).joinToString(" ").ifBlank { null },
+            sourceTimestamp = sourceTimestamp,
             accent = 0xFF7DC8A5,
         )
     }

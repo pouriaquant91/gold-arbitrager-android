@@ -15,6 +15,14 @@
 - نمایش پوشش داده: ۵۲ سکوی شناسایی‌شده، ۱۵ feed JSON قابل پایش، یک ناسازگاری runtime و ۳۰ مورد بدون feed معتبر
 - CI برای اجرای unit test و ساخت debug APK در هر push
 
+## نصب روی موبایل
+
+آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
+
+**[دانلود مستقیم Gold Arbitrager Android 0.2.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.2.0/GoldArbitrager-android-v0.2.0-beta.apk)**
+
+فایل APK را روی گوشی باز کنید و در صورت درخواست Android، اجازهٔ نصب از همین مرورگر یا File Manager را فعال کنید. این build با کلید debug امضا شده و برای تست شخصی است؛ نسخهٔ انتشار نهایی بعداً با keystore اختصاصی و Play Integrity آماده می‌شود.
+
 ## مدل استراتژی
 
 ربات قرار نیست طلا را برای هر معامله از یک سکو به سکوی دیگر منتقل کند. مدل هدف، موجودی دوطرفه است:
@@ -29,7 +37,7 @@
 
 ## ساخت پروژه
 
-پیش‌نیازها: JDK 17 و Android SDK 37.
+پیش‌نیازها: JDK 17 و Android SDK 36.
 
 ```bash
 ./gradlew testDebugUnitTest assembleDebug
