@@ -29,7 +29,7 @@ import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.Database
+import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Security
@@ -91,7 +91,7 @@ import java.util.Locale
 private enum class AppSection(val label: String, val icon: ImageVector) {
     MARKET("بازار", Icons.Rounded.Dashboard),
     OPPORTUNITIES("فرصت‌ها", Icons.Rounded.SwapVert),
-    COVERAGE("پوشش", Icons.Rounded.Database),
+    COVERAGE("پوشش", Icons.Rounded.Storage),
     SETTINGS("تنظیمات", Icons.Rounded.Settings),
 }
 
