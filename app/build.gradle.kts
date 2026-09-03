@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.pouriaquant.goldarb"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.pouriaquant.goldarb"
         minSdk = 26
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
 
@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -62,4 +62,3 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
-

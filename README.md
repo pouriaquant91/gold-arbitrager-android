@@ -53,10 +53,9 @@ app/build/outputs/apk/debug/app-debug.apk
 
 - Kotlin + Jetpack Compose + Material 3
 - Android Gradle Plugin 9.4 / Gradle 9.6
-- `compileSdk` و `targetSdk` 37، حداقل Android 8 (API 26)
+- `compileSdk` و `targetSdk` 36 (آخرین SDK پایدار)، حداقل Android 8 (API 26)
 - بدون SDK شبکهٔ شخص ثالث در MVP؛ فقط `HttpURLConnection` و `org.json`
 
 ## ارتباط با پروژهٔ وب
 
 این مخزن کلاینت Android مستقل است. موتور پایش بلندمدت، ثبت مدت فرصت، هشدار تلگرام و ذخیرهٔ تاریخچه در backend پروژهٔ اصلی باقی می‌ماند تا secretها وارد APK نشوند.
-
