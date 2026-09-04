@@ -14,6 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GoldArbitrager"
+rootProject.name = "ZarArb"
 include(":app")
-

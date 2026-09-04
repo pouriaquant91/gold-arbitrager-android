@@ -25,12 +25,12 @@ jobs:
       - name: Test and build installable beta APK
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
       - name: Prepare release asset
-        run: cp app/build/outputs/apk/debug/app-debug.apk "GoldArbitrager-${GITHUB_REF_NAME}-beta.apk"
+        run: cp app/build/outputs/apk/debug/app-debug.apk "ZarArb-${GITHUB_REF_NAME}-beta.apk"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
-          "GoldArbitrager-${GITHUB_REF_NAME}-beta.apk"
-          --title "Gold Arbitrager ${GITHUB_REF_NAME} Beta"
-          --notes "نسخه آزمایشی قابل نصب؛ شامل رابط هماهنگ با وب، feed عمومی داریک و مقایسه دفتر سفارش XAUT والکس/تبدیل پس از کارمزد، VAT و بازتوازن. این نسخه سفارش واقعی ارسال نمی‌کند."
+          "ZarArb-${GITHUB_REF_NAME}-beta.apk"
+          --title "زرآرب ${GITHUB_REF_NAME} Beta"
+          --notes "نسخه آزمایشی قابل نصب زرآرب؛ شامل رابط Emerald هماهنگ با وب، تم تیره/روشن، قفل اثر انگشت، feed عمومی داریک و مقایسه دفتر سفارش XAUT والکس/تبدیل پس از همه هزینه‌ها. این نسخه سفارش واقعی ارسال نمی‌کند."

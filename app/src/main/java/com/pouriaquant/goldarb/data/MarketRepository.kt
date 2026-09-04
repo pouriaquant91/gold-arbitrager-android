@@ -47,7 +47,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "GoldArbitrager-Android/0.1")
+            setRequestProperty("User-Agent", "ZarArb-Android/0.4")
             instanceFollowRedirects = true
         }
         return try {

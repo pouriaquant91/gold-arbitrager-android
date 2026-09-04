@@ -4,6 +4,7 @@ package com.pouriaquant.goldarb.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,10 @@ import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Refresh
@@ -48,6 +53,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -73,6 +80,8 @@ import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.QuoteQuality
 import com.pouriaquant.goldarb.data.TokenizedGoldComparison
+import com.pouriaquant.goldarb.security.AppThemeMode
+import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.theme.Coral400
 import com.pouriaquant.goldarb.ui.theme.Gold400
 import com.pouriaquant.goldarb.ui.theme.Ink200
@@ -97,7 +106,16 @@ private enum class AppSection(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-fun GoldArbApp(viewModel: GoldArbViewModel = viewModel()) {
+fun GoldArbApp(
+    biometricAvailable: Boolean,
+    biometricEnabled: Boolean,
+    themeMode: AppThemeMode,
+    visualStyle: AppVisualStyle,
+    onBiometricChanged: (Boolean) -> Unit,
+    onThemeModeChanged: (AppThemeMode) -> Unit,
+    onVisualStyleChanged: (AppVisualStyle) -> Unit,
+    viewModel: GoldArbViewModel = viewModel(),
+) {
     var sectionIndex by remember { mutableIntStateOf(0) }
     val state = viewModel.state
 
@@ -132,7 +150,17 @@ fun GoldArbApp(viewModel: GoldArbViewModel = viewModel()) {
                 AppSection.MARKET -> MarketScreen(state, viewModel::refresh, padding)
                 AppSection.OPPORTUNITIES -> OpportunityScreen(state, padding)
                 AppSection.COVERAGE -> CoverageScreen(padding)
-                AppSection.SETTINGS -> SettingsScreen(state, padding)
+                AppSection.SETTINGS -> SettingsScreen(
+                    state = state,
+                    padding = padding,
+                    biometricAvailable = biometricAvailable,
+                    biometricEnabled = biometricEnabled,
+                    themeMode = themeMode,
+                    visualStyle = visualStyle,
+                    onBiometricChanged = onBiometricChanged,
+                    onThemeModeChanged = onThemeModeChanged,
+                    onVisualStyleChanged = onVisualStyleChanged,
+                )
             }
         }
     }
@@ -184,7 +212,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            ScreenHeader("دیدبان طلا", "GOLDARB / نسخه Android", state.isLoading, onRefresh)
+            ScreenHeader("زرآرب", "دیدبان هوشمند آربیتراژ طلا", state.isLoading, onRefresh)
         }
         item { SafetyHero(state.opportunities.firstOrNull(), state.quotes.size, state.failedVenueNames.size) }
         item {
@@ -441,13 +469,53 @@ private fun CoverageBar() {
 }
 
 @Composable
-private fun SettingsScreen(state: GoldArbUiState, padding: PaddingValues) {
+private fun SettingsScreen(
+    state: GoldArbUiState,
+    padding: PaddingValues,
+    biometricAvailable: Boolean,
+    biometricEnabled: Boolean,
+    themeMode: AppThemeMode,
+    visualStyle: AppVisualStyle,
+    onBiometricChanged: (Boolean) -> Unit,
+    onThemeModeChanged: (AppThemeMode) -> Unit,
+    onVisualStyleChanged: (AppVisualStyle) -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding),
         contentPadding = PaddingValues(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { ScreenHeader("کنترل ریسک", "READ-ONLY MONITOR") }
+        item { ScreenHeader("تنظیمات زرآرب", "امنیت و ظاهر") }
+        item {
+            ToggleSettingRow(
+                icon = Icons.Rounded.Fingerprint,
+                title = "قفل اثر انگشت",
+                value = if (biometricAvailable) "قفل اپ پس از خروج" else "در این دستگاه در دسترس نیست",
+                checked = biometricEnabled,
+                enabled = biometricAvailable,
+                onCheckedChange = onBiometricChanged,
+            )
+        }
+        item { SectionTitle("تم", "انتخاب‌های منتقل‌شده از Pay an Installment") }
+        item {
+            ChoiceSettingRow(
+                icon = Icons.Rounded.DarkMode,
+                title = "حالت نمایش",
+                choices = listOf("تیره" to AppThemeMode.DARK, "سیستم" to AppThemeMode.SYSTEM, "روشن" to AppThemeMode.LIGHT),
+                selected = themeMode,
+                onSelected = onThemeModeChanged,
+            )
+        }
+        item {
+            ChoiceSettingRow(
+                icon = Icons.Rounded.Palette,
+                title = "زبان بصری",
+                choices = listOf("Emerald Luxury" to AppVisualStyle.EMERALD_LUXURY, "Navy Banking" to AppVisualStyle.NAVY_BANKING),
+                selected = visualStyle,
+                onSelected = onVisualStyleChanged,
+            )
+        }
+        item { SectionTitle("کنترل ریسک", "READ-ONLY MONITOR") }
         item { SettingRow(Icons.Rounded.Security, "حداقل سود خالص", formatToman(state.policy.minimumNetProfitToman), Gold400) }
         item { SettingRow(Icons.Rounded.Analytics, "لغزش محافظه‌کارانه", "۰٫۱٪ در هر سمت", Color(0xFF8EB8E7)) }
         item { SettingRow(Icons.Rounded.Autorenew, "ذخیره بازتوازن", "۰٫۰۳٪ ارزش میانی", Mint400) }
@@ -460,6 +528,101 @@ private fun SettingsScreen(state: GoldArbUiState, padding: PaddingValues) {
                 "اپ فقط endpointهای عمومی read-only را می‌خواند. توکن معامله، موجودی و کلید تلگرام باید در backend امن بماند؛ هیچ secretی داخل APK قرار نمی‌گیرد.",
                 Mint400,
             )
+        }
+    }
+}
+
+@Composable
+fun LockScreen(biometricAvailable: Boolean, onUnlock: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(28.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(28.dp),
+            border = CardDefaults.outlinedCardBorder(),
+            modifier = Modifier.fillMaxWidth().clickable(enabled = biometricAvailable, onClick = onUnlock),
+        ) {
+            Column(
+                modifier = Modifier.padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Icon(Icons.Rounded.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
+                Text("زرآرب قفل است", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                Text(
+                    if (biometricAvailable) "برای باز کردن، لمس کنید و هویت خود را تأیید کنید." else "قفل زیستی دستگاه در دسترس نیست.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                if (biometricAvailable) Icon(Icons.Rounded.Fingerprint, contentDescription = "باز کردن", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToggleSettingRow(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(18.dp)).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
+        )
+    }
+}
+
+@Composable
+private fun <T> ChoiceSettingRow(
+    icon: ImageVector,
+    title: String,
+    choices: List<Pair<String, T>>,
+    selected: T,
+    onSelected: (T) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(18.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(12.dp))
+            Text(title, style = MaterialTheme.typography.titleMedium)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            choices.forEach { (label, value) ->
+                val active = value == selected
+                Text(
+                    text = label,
+                    color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                        .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onSelected(value) }.padding(horizontal = 6.dp, vertical = 10.dp),
+                )
+            }
         }
     }
 }
