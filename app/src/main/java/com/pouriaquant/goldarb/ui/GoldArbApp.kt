@@ -121,11 +121,11 @@ fun GoldArbApp(
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
-            containerColor = Pine950,
+            containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets.statusBars,
             bottomBar = {
                 NavigationBar(
-                    containerColor = Pine900,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     windowInsets = WindowInsets.navigationBars,
                 ) {
                     AppSection.entries.forEachIndexed { index, section ->
@@ -135,11 +135,11 @@ fun GoldArbApp(
                             icon = { Icon(section.icon, contentDescription = section.label) },
                             label = { Text(section.label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Pine950,
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
                                 selectedTextColor = Gold400,
                                 indicatorColor = Gold400,
-                                unselectedIconColor = Ink400,
-                                unselectedTextColor = Ink400,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                         )
                     }
@@ -183,7 +183,7 @@ private fun ScreenHeader(
             Text(title, style = MaterialTheme.typography.headlineMedium)
         }
         if (onRefresh != null) {
-            Surface(shape = CircleShape, color = Pine850, border = CardDefaults.outlinedCardBorder()) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, border = CardDefaults.outlinedCardBorder()) {
                 IconButton(onClick = onRefresh, enabled = !isLoading) {
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(19.dp), strokeWidth = 2.dp, color = Gold400)
@@ -203,7 +203,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
             .fillMaxSize()
             .background(
                 Brush.radialGradient(
-                    colors = listOf(Pine800.copy(alpha = 0.65f), Pine950),
+                    colors = listOf(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f), MaterialTheme.colorScheme.background),
                     radius = 900f,
                 ),
             )
@@ -244,7 +244,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
             Text(
                 text = state.receivedAt?.let { "آخرین دریافت دستگاه: ${formatInstant(it)}" } ?: "در حال دریافت نخستین snapshot…",
                 style = MaterialTheme.typography.labelMedium,
-                color = Ink400,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )
@@ -254,20 +254,20 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
 
 @Composable
 private fun TokenizedGoldCard(comparison: TokenizedGoldComparison?, error: String?) {
-    Card(colors = CardDefaults.cardColors(containerColor = Pine900), shape = RoundedCornerShape(22.dp), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(22.dp), border = CardDefaults.outlinedCardBorder()) {
         Column(modifier = Modifier.padding(17.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text("مسیر جایگزین XAUT", style = MaterialTheme.typography.titleMedium)
-                    Text("همان توکن در والکس و تبدیل", style = MaterialTheme.typography.labelMedium, color = Ink400)
+                    Text("همان توکن در والکس و تبدیل", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusPill(if (comparison?.profitable == true) "فرصت" else "پایش", if (comparison?.profitable == true) Mint400 else Gold400)
             }
             when {
                 comparison != null -> {
-                    Text("خرید ${comparison.buyVenueName} ← فروش ${comparison.sellVenueName}", style = MaterialTheme.typography.bodyMedium, color = Ink200)
+                    Text("خرید ${comparison.buyVenueName} ← فروش ${comparison.sellVenueName}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(formatToman(comparison.netProfitToman), style = MaterialTheme.typography.titleLarge, color = if (comparison.profitable) Mint400 else Coral400)
-                    Text("برای ${comparison.quantityXaut} XAUT (معادل ${String.format(Locale.US, "%.3f", comparison.equivalent18kGram)} گرم ۱۸ عیار)؛ کارمزد ۰٫۳۵٪ هر سمت، VAT کارمزد و بازتوازن کسر شده است.", style = MaterialTheme.typography.bodyMedium, color = Ink200)
+                    Text("برای ${comparison.quantityXaut} XAUT (معادل ${String.format(Locale.US, "%.3f", comparison.equivalent18kGram)} گرم ۱۸ عیار)؛ کارمزد ۰٫۳۵٪ هر سمت، VAT کارمزد و بازتوازن کسر شده است.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 else -> Text(error ?: "در حال دریافت دفتر سفارش XAUT…", style = MaterialTheme.typography.bodyMedium, color = Coral400)
             }
@@ -279,7 +279,7 @@ private fun TokenizedGoldCard(comparison: TokenizedGoldComparison?, error: Strin
 private fun SafetyHero(best: Opportunity?, receivedCount: Int, failedCount: Int) {
     val safe = best?.crossesSafetyThreshold == true
     Card(
-        colors = CardDefaults.cardColors(containerColor = Pine900),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(26.dp),
         border = CardDefaults.outlinedCardBorder(),
     ) {
@@ -307,11 +307,11 @@ private fun SafetyHero(best: Opportunity?, receivedCount: Int, failedCount: Int)
                         "خرید ${best.buyVenue.venueName} ← فروش ${best.sellVenue.venueName} برای ${best.quantityGram} گرم، پس از همه ذخیره‌های هزینه."
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Ink200,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                HorizontalDivider(color = Outline)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text("دریافت موفق دستگاه: ${toPersianDigits(receivedCount)}", style = MaterialTheme.typography.labelMedium, color = Ink400)
+                    Text("دریافت موفق دستگاه: ${toPersianDigits(receivedCount)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("ناموفق: ${toPersianDigits(failedCount)}", style = MaterialTheme.typography.labelMedium, color = if (failedCount > 0) Coral400 else Mint400)
                 }
             }
@@ -323,7 +323,7 @@ private fun SafetyHero(best: Opportunity?, receivedCount: Int, failedCount: Int)
 private fun QuoteCard(quote: MarketQuote) {
     val accent = Color(quote.accent)
     Card(
-        colors = CardDefaults.cardColors(containerColor = Pine900),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         border = CardDefaults.outlinedCardBorder(),
     ) {
@@ -336,7 +336,7 @@ private fun QuoteCard(quote: MarketQuote) {
                 Spacer(Modifier.width(11.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(quote.venueName, style = MaterialTheme.typography.titleMedium)
-                    Text(quote.sourceLabel, style = MaterialTheme.typography.labelMedium, color = Ink400)
+                    Text(quote.sourceLabel, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusPill(quote.qualityLabel, qualityColor(quote.quality))
             }
@@ -351,9 +351,9 @@ private fun QuoteCard(quote: MarketQuote) {
                     }
                 }
             }
-            Text(quote.feeLabel, style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text(quote.feeLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             quote.sourceTimestamp?.let {
-                Text("زمان منبع: $it", style = MaterialTheme.typography.labelMedium, color = Ink400, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("زمان منبع: $it", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -362,12 +362,12 @@ private fun QuoteCard(quote: MarketQuote) {
 @Composable
 private fun PriceCell(label: String, value: Double, modifier: Modifier, color: Color) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(15.dp)).background(Pine850).padding(12.dp),
+        modifier = modifier.clip(RoundedCornerShape(15.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Ink400)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(formatToman(value), style = MaterialTheme.typography.titleMedium, color = color, maxLines = 1)
-        Text("تومان / گرم", style = MaterialTheme.typography.labelMedium, color = Ink400)
+        Text("تومان / گرم", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -406,24 +406,24 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
 
 @Composable
 private fun EmptyOpportunityCard() {
-    Card(colors = CardDefaults.cardColors(containerColor = Pine900), shape = RoundedCornerShape(24.dp), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp), border = CardDefaults.outlinedCardBorder()) {
         Column(modifier = Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.Autorenew, contentDescription = null, tint = Gold400, modifier = Modifier.size(34.dp))
             Text("هنوز جفت دوطرفهٔ معتبر نداریم", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-            Text("این نتیجه بهتر از سود ظاهری غلط است: quoteهای قرنطینه و تک‌نرخ وارد موتور نشده‌اند. مانیتور باید چند روز داده جمع کند تا برگشت جهت و مدت فرصت اندازه‌گیری شود.", style = MaterialTheme.typography.bodyMedium, color = Ink200, textAlign = TextAlign.Center)
+            Text("این نتیجه بهتر از سود ظاهری غلط است: quoteهای قرنطینه و تک‌نرخ وارد موتور نشده‌اند. مانیتور باید چند روز داده جمع کند تا برگشت جهت و مدت فرصت اندازه‌گیری شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
     }
 }
 
 @Composable
 private fun OpportunityCard(opportunity: Opportunity) {
-    Card(colors = CardDefaults.cardColors(containerColor = Pine900), shape = RoundedCornerShape(20.dp), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(20.dp), border = CardDefaults.outlinedCardBorder()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("${opportunity.buyVenue.venueName} ← ${opportunity.sellVenue.venueName}", style = MaterialTheme.typography.titleMedium)
                 Text(formatToman(opportunity.netProfitToman), color = if (opportunity.crossesSafetyThreshold) Mint400 else Coral400, fontWeight = FontWeight.Bold)
             }
-            Text("اسپرد خام ${formatToman(opportunity.grossSpreadToman)} · لغزش ${formatToman(opportunity.slippageReserveToman)} · بازتوازن ${formatToman(opportunity.rebalanceReserveToman)} · تسویه ${formatToman(opportunity.settlementReserveToman)}", style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text("اسپرد خام ${formatToman(opportunity.grossSpreadToman)} · لغزش ${formatToman(opportunity.slippageReserveToman)} · بازتوازن ${formatToman(opportunity.rebalanceReserveToman)} · تسویه ${formatToman(opportunity.settlementReserveToman)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -451,7 +451,7 @@ private fun CoverageScreen(padding: PaddingValues) {
 
 @Composable
 private fun CoverageBar() {
-    Card(colors = CardDefaults.cardColors(containerColor = Pine900), shape = RoundedCornerShape(24.dp), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp), border = CardDefaults.outlinedCardBorder()) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("پوشش فعلی", style = MaterialTheme.typography.titleMedium)
@@ -463,7 +463,7 @@ private fun CoverageBar() {
                 Box(Modifier.weight(17f).fillMaxSize().background(Color(0xFF8EB8E7)))
                 Box(Modifier.weight(22f).fillMaxSize().background(Coral400.copy(alpha = 0.55f)))
             }
-            Text("feed داشتن با قابل معامله بودن یکی نیست؛ فقط quote هم‌زمان، دوطرفه و هزینه‌کامل وارد سیگنال می‌شود.", style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text("feed داشتن با قابل معامله بودن یکی نیست؛ فقط quote هم‌زمان، دوطرفه و هزینه‌کامل وارد سیگنال می‌شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -629,10 +629,10 @@ private fun <T> ChoiceSettingRow(
 
 @Composable
 private fun MetricCard(label: String, value: String, note: String, modifier: Modifier, valueColor: Color = Gold400) {
-    Column(modifier = modifier.clip(RoundedCornerShape(17.dp)).background(Pine900).border(1.dp, Outline, RoundedCornerShape(17.dp)).padding(12.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Ink400, maxLines = 1)
+    Column(modifier = modifier.clip(RoundedCornerShape(17.dp)).background(MaterialTheme.colorScheme.surface).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(17.dp)).padding(12.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         Text(value, style = MaterialTheme.typography.titleLarge, color = valueColor)
-        Text(note, style = MaterialTheme.typography.labelMedium, color = Ink400, maxLines = 1)
+        Text(note, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
     }
 }
 
@@ -640,7 +640,7 @@ private fun MetricCard(label: String, value: String, note: String, modifier: Mod
 private fun SectionTitle(title: String, subtitle: String) {
     Column(modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) {
         Text(title, style = MaterialTheme.typography.titleLarge)
-        Text(subtitle, style = MaterialTheme.typography.labelMedium, color = Ink400)
+        Text(subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -659,7 +659,7 @@ private fun StatusPill(label: String, color: Color) {
 @Composable
 private fun NoticeCard(icon: ImageVector, title: String, body: String, accent: Color) {
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Pine900).border(1.dp, accent.copy(alpha = 0.26f), RoundedCornerShape(18.dp)).padding(15.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface).border(1.dp, accent.copy(alpha = 0.26f), RoundedCornerShape(18.dp)).padding(15.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
@@ -668,7 +668,7 @@ private fun NoticeCard(icon: ImageVector, title: String, body: String, accent: C
         Spacer(Modifier.width(11.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -682,14 +682,14 @@ private fun StrategyStep(number: String, title: String, body: String) {
         Spacer(Modifier.width(11.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
 private fun CoverageBucket(value: String, title: String, body: String, accent: Color, icon: ImageVector) {
-    Card(colors = CardDefaults.cardColors(containerColor = Pine900), shape = RoundedCornerShape(19.dp), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(19.dp), border = CardDefaults.outlinedCardBorder()) {
         Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(accent.copy(alpha = 0.13f)), contentAlignment = Alignment.Center) {
                 Text(value, color = accent, style = MaterialTheme.typography.titleLarge)
@@ -697,7 +697,7 @@ private fun CoverageBucket(value: String, title: String, body: String, accent: C
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(body, style = MaterialTheme.typography.bodyMedium, color = Ink200)
+                Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(icon, contentDescription = null, tint = accent.copy(alpha = 0.8f), modifier = Modifier.size(22.dp))
         }
@@ -706,7 +706,7 @@ private fun CoverageBucket(value: String, title: String, body: String, accent: C
 
 @Composable
 private fun ResearchLane(code: String, title: String, body: String, tag: String) {
-    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Pine900).border(1.dp, Outline, RoundedCornerShape(18.dp)).padding(15.dp), verticalAlignment = Alignment.Top) {
+    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(18.dp)).padding(15.dp), verticalAlignment = Alignment.Top) {
         Text(code, color = Gold400, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -714,19 +714,19 @@ private fun ResearchLane(code: String, title: String, body: String, tag: String)
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(tag, style = MaterialTheme.typography.labelMedium, color = Gold400)
             }
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
 private fun SettingRow(icon: ImageVector, title: String, value: String, accent: Color) {
-    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Pine900).border(1.dp, Outline, RoundedCornerShape(18.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(18.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = accent)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(value, style = MaterialTheme.typography.bodyMedium, color = Ink200)
+            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
