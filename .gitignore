@@ -1,5 +1,8 @@
 *.iml
 .gradle/
+.gradle-user/
+.android-user/
+.user-home/
 .kotlin/
 /local.properties
 /.idea/
@@ -7,4 +10,3 @@
 /captures/
 .DS_Store
 app/build/
-

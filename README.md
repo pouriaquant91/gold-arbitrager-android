@@ -8,18 +8,19 @@
 
 - رابط مدرن Jetpack Compose با طراحی سبز تیره/طلایی و ناوبری چهاربخشی
 - دریافت مستقیم و read-only چند endpoint عمومی رسمی
+- مقایسهٔ مستقیم دفتر سفارش XAUT والکس و تبدیل با عمق واقعی و هزینهٔ بدبینانه
 - جداسازی صریح `ask`، `bid` و `reference-only`؛ از تک‌نرخ bid/ask جعلی ساخته نمی‌شود
 - قرنطینهٔ quoteهای فاقد timestamp یا fee تأییدشده
 - محاسبهٔ فرصت با کسر کارمزد، VAT کارمزد، لغزش دو سمت، بازتوازن و تسویه
 - آستانهٔ بدبینانهٔ پیش‌فرض: `100,000` تومان سود خالص
-- نمایش پوشش داده: ۵۲ سکوی شناسایی‌شده، ۱۵ feed JSON قابل پایش، یک ناسازگاری runtime و ۳۰ مورد بدون feed معتبر
+- نمایش پوشش هماهنگ با وب: ۵۶ سکوی شناسایی‌شده، ۲۸ collector پیاده‌سازی‌شده و ۲۲ مورد بدون feed معتبر
 - CI برای اجرای unit test و ساخت debug APK در هر push
 
 ## نصب روی موبایل
 
 آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
 
-**[دانلود مستقیم Gold Arbitrager Android 0.2.1 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.2.1/GoldArbitrager-android-v0.2.1-beta.apk)**
+**[دانلود مستقیم Gold Arbitrager Android 0.3.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.3.0/GoldArbitrager-android-v0.3.0-beta.apk)**
 
 فایل APK را روی گوشی باز کنید و در صورت درخواست Android، اجازهٔ نصب از همین مرورگر یا File Manager را فعال کنید. این build با کلید debug امضا شده و برای تست شخصی است؛ نسخهٔ انتشار نهایی بعداً با keystore اختصاصی و Play Integrity آماده می‌شود.
 
@@ -33,7 +34,7 @@
 4. ارزش واقعی یک جفت وقتی ثابت می‌شود که جهت اختلاف آن در طول روز چند بار برگردد.
 5. بازتوازن موجودی فقط به‌صورت دوره‌ای و با هزینهٔ ازپیش‌کسرشده انجام می‌شود.
 
-جزئیات مدل داده و مسیر ۳۰ سکوی بدون feed در [docs/data-integrity.md](docs/data-integrity.md) و [docs/feed-discovery.md](docs/feed-discovery.md) آمده است.
+جزئیات مدل داده و مسیر سکوهای بدون feed در [docs/data-integrity.md](docs/data-integrity.md) و [docs/feed-discovery.md](docs/feed-discovery.md) آمده است.
 
 ## ساخت پروژه
 

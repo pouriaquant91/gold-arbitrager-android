@@ -72,6 +72,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.QuoteQuality
+import com.pouriaquant.goldarb.data.TokenizedGoldComparison
 import com.pouriaquant.goldarb.ui.theme.Coral400
 import com.pouriaquant.goldarb.ui.theme.Gold400
 import com.pouriaquant.goldarb.ui.theme.Ink200
@@ -188,11 +189,12 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
         item { SafetyHero(state.opportunities.firstOrNull(), state.quotes.size, state.failedVenueNames.size) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                MetricCard("کل سکوها", "۵۲", "کاتالوگ", Modifier.weight(1f))
-                MetricCard("feed زنده", "۱۵", "Node معتبر", Modifier.weight(1f))
-                MetricCard("فاقد feed", "۳۰", "نیازمند کشف", Modifier.weight(1f), Coral400)
+                MetricCard("کل سکوها", "۵۶", "کاتالوگ", Modifier.weight(1f))
+                MetricCard("پاسخ موبایل", toPersianDigits(state.quotes.size), "مستقیم", Modifier.weight(1f))
+                MetricCard("فاقد feed", "۲۲", "۵ فعال + ۱۷ رزرو", Modifier.weight(1f), Coral400)
             }
         }
+        item { TokenizedGoldCard(state.tokenizedGold, state.tokenizedGoldError) }
         item {
             SectionTitle("نرخ‌های مستقیم روی موبایل", "bid/ask جعلی تولید نمی‌شود")
         }
@@ -218,6 +220,29 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )
+        }
+    }
+}
+
+@Composable
+private fun TokenizedGoldCard(comparison: TokenizedGoldComparison?, error: String?) {
+    Card(colors = CardDefaults.cardColors(containerColor = Pine900), shape = RoundedCornerShape(22.dp), border = CardDefaults.outlinedCardBorder()) {
+        Column(modifier = Modifier.padding(17.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text("مسیر جایگزین XAUT", style = MaterialTheme.typography.titleMedium)
+                    Text("همان توکن در والکس و تبدیل", style = MaterialTheme.typography.labelMedium, color = Ink400)
+                }
+                StatusPill(if (comparison?.profitable == true) "فرصت" else "پایش", if (comparison?.profitable == true) Mint400 else Gold400)
+            }
+            when {
+                comparison != null -> {
+                    Text("خرید ${comparison.buyVenueName} ← فروش ${comparison.sellVenueName}", style = MaterialTheme.typography.bodyMedium, color = Ink200)
+                    Text(formatToman(comparison.netProfitToman), style = MaterialTheme.typography.titleLarge, color = if (comparison.profitable) Mint400 else Coral400)
+                    Text("برای ${comparison.quantityXaut} XAUT (معادل ${String.format(Locale.US, "%.3f", comparison.equivalent18kGram)} گرم ۱۸ عیار)؛ کارمزد ۰٫۳۵٪ هر سمت، VAT کارمزد و بازتوازن کسر شده است.", style = MaterialTheme.typography.bodyMedium, color = Ink200)
+                }
+                else -> Text(error ?: "در حال دریافت دفتر سفارش XAUT…", style = MaterialTheme.typography.bodyMedium, color = Coral400)
+            }
         }
     }
 }
@@ -382,13 +407,13 @@ private fun CoverageScreen(padding: PaddingValues) {
         contentPadding = PaddingValues(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { ScreenHeader("پوشش داده", "۵۲ سکوی شناسایی‌شده") }
+        item { ScreenHeader("پوشش داده", "۵۶ سکوی شناسایی‌شده") }
         item { CoverageBar() }
-        item { CoverageBucket("۱۵", "feed JSON قابل دریافت", "گلدیس نیز کشف شد؛ هر quote هنوز گیت کیفیت مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
-        item { CoverageBucket("۱", "ناسازگاری runtime", "ملی‌گلد در probe سیستم پاسخ می‌دهد اما redirect کلاینت Node باید رفع شود", Gold400, Icons.Rounded.WarningAmber) }
-        item { CoverageBucket("۶", "HTML / WebSocket / snapshot", "پاسخ داریم، اما هنوز collector زندهٔ استاندارد نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
-        item { CoverageBucket("۳۰", "بدون feed معتبر", "ابتدا discovery عمومی و تست اپ؛ سپس API رسمی/partner برای موارد بسته", Coral400, Icons.Rounded.CloudOff) }
-        item { SectionTitle("برنامه ۳۰ سکوی باقیمانده", "از ارزان‌ترین مسیر اثبات شروع می‌کنیم") }
+        item { CoverageBucket("۲۸", "collector عمومی پیاده‌سازی‌شده", "در probe اخیر ۲۶ منبع پاسخ معتبر دادند؛ هر quote گیت کیفیت مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
+        item { CoverageBucket("۴", "bid/ask قابل‌مقایسه", "فقط زمان، جهت و ساختار هزینهٔ کافی وارد موتور می‌شود", Gold400, Icons.Rounded.WarningAmber) }
+        item { CoverageBucket("۳۰", "قرنطینه یا مرجع", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
+        item { CoverageBucket("۲۲", "فاقد feed معتبر", "۵ مورد در discovery فعال و ۱۷ فروشگاه/قراردادی در رزرو هستند", Coral400, Icons.Rounded.CloudOff) }
+        item { SectionTitle("برنامه ۲۲ سکوی باقیمانده", "از ارزان‌ترین مسیر اثبات شروع می‌کنیم") }
         item { ResearchLane("A", "کشف عمومی", "بررسی bundle وب، XHR، GraphQL، Socket.IO و endpointهای preview؛ بدون دورزدن احراز هویت.", "اولویت بالا") }
         item { ResearchLane("B", "اپ موبایل", "تحلیل ترافیک مجاز روی دستگاه خودمان، deep-linkها و پاسخ‌های pre-order برای bid/ask واقعی.", "پس از A") }
         item { ResearchLane("C", "تأمین‌کننده مشترک", "تشخیص white-labelها؛ یک feed معتبر ممکن است چند برند را پوشش دهد، ولی venue مستقل فرض نمی‌شود.", "صرفه‌جویی بالا") }
@@ -402,13 +427,13 @@ private fun CoverageBar() {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("پوشش فعلی", style = MaterialTheme.typography.titleMedium)
-                Text("۲۷٪ مستقیم", color = Mint400, fontWeight = FontWeight.Bold)
+                Text("۷٪ قابل‌مقایسه", color = Mint400, fontWeight = FontWeight.Bold)
             }
             Row(modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape)) {
-                Box(Modifier.weight(15f).fillMaxSize().background(Mint400))
-                Box(Modifier.weight(1f).fillMaxSize().background(Gold400))
-                Box(Modifier.weight(6f).fillMaxSize().background(Color(0xFF8EB8E7)))
-                Box(Modifier.weight(30f).fillMaxSize().background(Coral400.copy(alpha = 0.55f)))
+                Box(Modifier.weight(4f).fillMaxSize().background(Mint400))
+                Box(Modifier.weight(13f).fillMaxSize().background(Gold400))
+                Box(Modifier.weight(17f).fillMaxSize().background(Color(0xFF8EB8E7)))
+                Box(Modifier.weight(22f).fillMaxSize().background(Coral400.copy(alpha = 0.55f)))
             }
             Text("feed داشتن با قابل معامله بودن یکی نیست؛ فقط quote هم‌زمان، دوطرفه و هزینه‌کامل وارد سیگنال می‌شود.", style = MaterialTheme.typography.bodyMedium, color = Ink200)
         }

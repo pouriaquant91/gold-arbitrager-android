@@ -33,4 +33,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME"
           "GoldArbitrager-${GITHUB_REF_NAME}-beta.apk"
           --title "Gold Arbitrager ${GITHUB_REF_NAME} Beta"
-          --notes "نسخه آزمایشی قابل نصب؛ شامل رابط RTL، محاسبه هزینه کامل و اعتبارسنجی timestamp جلالی گلدیس. این نسخه سفارش واقعی ارسال نمی‌کند."
+          --notes "نسخه آزمایشی قابل نصب؛ شامل رابط هماهنگ با وب، feed عمومی داریک و مقایسه دفتر سفارش XAUT والکس/تبدیل پس از کارمزد، VAT و بازتوازن. این نسخه سفارش واقعی ارسال نمی‌کند."
