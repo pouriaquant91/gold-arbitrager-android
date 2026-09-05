@@ -47,7 +47,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.5")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.6")
             instanceFollowRedirects = true
         }
         return try {

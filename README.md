@@ -20,9 +20,9 @@
 
 آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
 
-**[دانلود مستقیم ZarGard Android 0.5.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.5.0/ZarGard-android-v0.5.0-beta.apk)**
+**[دانلود مستقیم ZarGard Android 0.6.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.6.0/ZarGard-android-v0.6.0-beta.apk)**
 
-نسخهٔ ۰٫۵ برند و آیکون اختصاصی زرگَرد، متن‌های فنی آشناتر، ظاهر Emerald Luxury، حالت روشن/تیره/سیستم، سبک Navy اختیاری و قفل اثر انگشت/قفل دستگاه را ارائه می‌کند.
+نسخهٔ ۰٫۶ برند و آیکون نهایی مشترک زرگَرد، متن‌های فنی آشناتر، ظاهر Emerald Luxury، حالت روشن/تیره/سیستم، سبک Navy اختیاری، قفل اثر انگشت/قفل دستگاه و نمایش صریح نسخه و PWA همراه را ارائه می‌کند.
 
 ## نسخه PWA
 

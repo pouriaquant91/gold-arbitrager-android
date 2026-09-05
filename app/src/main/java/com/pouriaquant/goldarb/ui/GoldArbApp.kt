@@ -521,6 +521,9 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.Autorenew, "Rebalancing Reserve", "۰٫۰۳٪ ارزش میانی", Mint400) }
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
+        item { SectionTitle("Distribution", "ANDROID & PWA") }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.6.0 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(
                 Icons.Rounded.Security,
