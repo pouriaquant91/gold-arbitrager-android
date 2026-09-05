@@ -212,19 +212,19 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            ScreenHeader("زرآرب", "دیدبان هوشمند آربیتراژ طلا", state.isLoading, onRefresh)
+            ScreenHeader("زرگَرد", "GOLD ARBITRAGE MONITOR", state.isLoading, onRefresh)
         }
         item { SafetyHero(state.opportunities.firstOrNull(), state.quotes.size, state.failedVenueNames.size) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                MetricCard("کل سکوها", "۵۶", "کاتالوگ", Modifier.weight(1f))
-                MetricCard("پاسخ موبایل", toPersianDigits(state.quotes.size), "مستقیم", Modifier.weight(1f))
-                MetricCard("فاقد feed", "۲۲", "۵ فعال + ۱۷ رزرو", Modifier.weight(1f), Coral400)
+                MetricCard("Platforms", "۵۶", "Catalog", Modifier.weight(1f))
+                MetricCard("Live Feeds", toPersianDigits(state.quotes.size), "Direct", Modifier.weight(1f))
+                MetricCard("No Feed", "۲۲", "۵ فعال + ۱۷ رزرو", Modifier.weight(1f), Coral400)
             }
         }
         item { TokenizedGoldCard(state.tokenizedGold, state.tokenizedGoldError) }
         item {
-            SectionTitle("نرخ‌های مستقیم روی موبایل", "bid/ask جعلی تولید نمی‌شود")
+            SectionTitle("Live Quotes", "bid/ask جعلی تولید نمی‌شود")
         }
         if (state.errorMessage != null) {
             item { NoticeCard(Icons.Rounded.CloudOff, "داده زنده در دسترس نیست", state.errorMessage, Coral400) }
@@ -242,7 +242,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
         }
         item {
             Text(
-                text = state.receivedAt?.let { "آخرین دریافت دستگاه: ${formatInstant(it)}" } ?: "در حال دریافت نخستین snapshot…",
+                text = state.receivedAt?.let { "Last Update: ${formatInstant(it)}" } ?: "در حال دریافت نخستین Snapshot…",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
@@ -259,7 +259,7 @@ private fun TokenizedGoldCard(comparison: TokenizedGoldComparison?, error: Strin
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text("مسیر جایگزین XAUT", style = MaterialTheme.typography.titleMedium)
-                    Text("همان توکن در والکس و تبدیل", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("XAUT Order Book · Wallex / Tabdeal", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusPill(if (comparison?.profitable == true) "فرصت" else "پایش", if (comparison?.profitable == true) Mint400 else Gold400)
             }
@@ -294,7 +294,7 @@ private fun SafetyHero(best: Opportunity?, receivedCount: Int, failedCount: Int)
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusPill(if (safe) "عبور از گیت ایمنی" else "حالت پایش — معامله خاموش", if (safe) Mint400 else Gold400)
+                StatusPill(if (safe) "Safety Gate: PASS" else "Monitoring · Trading OFF", if (safe) Mint400 else Gold400)
                 Text(
                     if (safe) formatToman(best!!.netProfitToman) else "سیگنال قابل‌اجرا نداریم",
                     style = MaterialTheme.typography.displaySmall,
@@ -302,7 +302,7 @@ private fun SafetyHero(best: Opportunity?, receivedCount: Int, failedCount: Int)
                 )
                 Text(
                     if (best == null) {
-                        "فقط quote دوطرفه، هم‌زمان و دارای fee تأییدشده مقایسه می‌شود. تک‌نرخ میلی به bid/ask ساختگی تبدیل نشده است."
+                        "فقط Quote دوطرفه، هم‌زمان و دارای Fee تأییدشده مقایسه می‌شود. تک‌نرخ میلی به bid/ask ساختگی تبدیل نشده است."
                     } else {
                         "خرید ${best.buyVenue.venueName} ← فروش ${best.sellVenue.venueName} برای ${best.quantityGram} گرم، پس از همه ذخیره‌های هزینه."
                     },
@@ -410,7 +410,7 @@ private fun EmptyOpportunityCard() {
         Column(modifier = Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.Autorenew, contentDescription = null, tint = Gold400, modifier = Modifier.size(34.dp))
             Text("هنوز جفت دوطرفهٔ معتبر نداریم", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-            Text("این نتیجه بهتر از سود ظاهری غلط است: quoteهای قرنطینه و تک‌نرخ وارد موتور نشده‌اند. مانیتور باید چند روز داده جمع کند تا برگشت جهت و مدت فرصت اندازه‌گیری شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            Text("این نتیجه بهتر از سود ظاهری غلط است: Quoteهای Quarantined و تک‌نرخ وارد موتور نشده‌اند. مانیتور باید چند روز داده جمع کند تا برگشت جهت و مدت فرصت اندازه‌گیری شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
     }
 }
@@ -423,7 +423,7 @@ private fun OpportunityCard(opportunity: Opportunity) {
                 Text("${opportunity.buyVenue.venueName} ← ${opportunity.sellVenue.venueName}", style = MaterialTheme.typography.titleMedium)
                 Text(formatToman(opportunity.netProfitToman), color = if (opportunity.crossesSafetyThreshold) Mint400 else Coral400, fontWeight = FontWeight.Bold)
             }
-            Text("اسپرد خام ${formatToman(opportunity.grossSpreadToman)} · لغزش ${formatToman(opportunity.slippageReserveToman)} · بازتوازن ${formatToman(opportunity.rebalanceReserveToman)} · تسویه ${formatToman(opportunity.settlementReserveToman)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Gross Spread ${formatToman(opportunity.grossSpreadToman)} · Slippage ${formatToman(opportunity.slippageReserveToman)} · Rebalancing ${formatToman(opportunity.rebalanceReserveToman)} · Settlement ${formatToman(opportunity.settlementReserveToman)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -437,14 +437,14 @@ private fun CoverageScreen(padding: PaddingValues) {
     ) {
         item { ScreenHeader("پوشش داده", "۵۶ سکوی شناسایی‌شده") }
         item { CoverageBar() }
-        item { CoverageBucket("۲۸", "collector عمومی پیاده‌سازی‌شده", "در probe اخیر ۲۶ منبع پاسخ معتبر دادند؛ هر quote گیت کیفیت مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
-        item { CoverageBucket("۴", "bid/ask قابل‌مقایسه", "فقط زمان، جهت و ساختار هزینهٔ کافی وارد موتور می‌شود", Gold400, Icons.Rounded.WarningAmber) }
-        item { CoverageBucket("۳۰", "قرنطینه یا مرجع", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
-        item { CoverageBucket("۲۲", "فاقد feed معتبر", "۵ مورد در discovery فعال و ۱۷ فروشگاه/قراردادی در رزرو هستند", Coral400, Icons.Rounded.CloudOff) }
+        item { CoverageBucket("۲۸", "Public Collectors", "در Probe اخیر ۲۶ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
+        item { CoverageBucket("۴", "Comparable bid/ask", "فقط زمان، جهت و ساختار هزینهٔ کافی وارد موتور می‌شود", Gold400, Icons.Rounded.WarningAmber) }
+        item { CoverageBucket("۳۰", "Quarantined / Reference", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
+        item { CoverageBucket("۲۲", "No Valid Feed", "۵ مورد در Discovery فعال و ۱۷ فروشگاه/قراردادی در رزرو هستند", Coral400, Icons.Rounded.CloudOff) }
         item { SectionTitle("برنامه ۲۲ سکوی باقیمانده", "از ارزان‌ترین مسیر اثبات شروع می‌کنیم") }
-        item { ResearchLane("A", "کشف عمومی", "بررسی bundle وب، XHR، GraphQL، Socket.IO و endpointهای preview؛ بدون دورزدن احراز هویت.", "اولویت بالا") }
-        item { ResearchLane("B", "اپ موبایل", "تحلیل ترافیک مجاز روی دستگاه خودمان، deep-linkها و پاسخ‌های pre-order برای bid/ask واقعی.", "پس از A") }
-        item { ResearchLane("C", "تأمین‌کننده مشترک", "تشخیص white-labelها؛ یک feed معتبر ممکن است چند برند را پوشش دهد، ولی venue مستقل فرض نمی‌شود.", "صرفه‌جویی بالا") }
+        item { ResearchLane("A", "Public Discovery", "بررسی Web Bundle، XHR، GraphQL، Socket.IO و Endpointهای Preview؛ بدون دورزدن احراز هویت.", "اولویت بالا") }
+        item { ResearchLane("B", "Mobile App Inspection", "تحلیل ترافیک مجاز روی دستگاه خودمان، Deep Linkها و پاسخ‌های Pre-order برای bid/ask واقعی.", "پس از A") }
+        item { ResearchLane("C", "Shared Backend", "تشخیص White-labelها؛ یک Feed معتبر ممکن است چند برند را پوشش دهد، ولی Venue مستقل فرض نمی‌شود.", "صرفه‌جویی بالا") }
         item { ResearchLane("D", "Partner API", "برای سکوهای بسته: درخواست read-only API، sandbox، rate limit، timestamp و مجوز بازنشر.", "مسیر قراردادی") }
     }
 }
@@ -463,7 +463,7 @@ private fun CoverageBar() {
                 Box(Modifier.weight(17f).fillMaxSize().background(Color(0xFF8EB8E7)))
                 Box(Modifier.weight(22f).fillMaxSize().background(Coral400.copy(alpha = 0.55f)))
             }
-            Text("feed داشتن با قابل معامله بودن یکی نیست؛ فقط quote هم‌زمان، دوطرفه و هزینه‌کامل وارد سیگنال می‌شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Feed داشتن با قابل معامله بودن یکی نیست؛ فقط Quote هم‌زمان، دوطرفه و هزینه‌کامل وارد سیگنال می‌شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -485,7 +485,7 @@ private fun SettingsScreen(
         contentPadding = PaddingValues(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { ScreenHeader("تنظیمات زرآرب", "امنیت و ظاهر") }
+        item { ScreenHeader("تنظیمات زرگَرد", "SECURITY & APPEARANCE") }
         item {
             ToggleSettingRow(
                 icon = Icons.Rounded.Fingerprint,
@@ -496,12 +496,12 @@ private fun SettingsScreen(
                 onCheckedChange = onBiometricChanged,
             )
         }
-        item { SectionTitle("تم", "انتخاب‌های منتقل‌شده از Pay an Installment") }
+        item { SectionTitle("Theme", "انتخاب‌های منتقل‌شده از Pay an Installment") }
         item {
             ChoiceSettingRow(
                 icon = Icons.Rounded.DarkMode,
-                title = "حالت نمایش",
-                choices = listOf("تیره" to AppThemeMode.DARK, "سیستم" to AppThemeMode.SYSTEM, "روشن" to AppThemeMode.LIGHT),
+                title = "Display Mode",
+                choices = listOf("Dark" to AppThemeMode.DARK, "System" to AppThemeMode.SYSTEM, "Light" to AppThemeMode.LIGHT),
                 selected = themeMode,
                 onSelected = onThemeModeChanged,
             )
@@ -509,23 +509,23 @@ private fun SettingsScreen(
         item {
             ChoiceSettingRow(
                 icon = Icons.Rounded.Palette,
-                title = "زبان بصری",
+                title = "Visual Style",
                 choices = listOf("Emerald Luxury" to AppVisualStyle.EMERALD_LUXURY, "Navy Banking" to AppVisualStyle.NAVY_BANKING),
                 selected = visualStyle,
                 onSelected = onVisualStyleChanged,
             )
         }
-        item { SectionTitle("کنترل ریسک", "READ-ONLY MONITOR") }
-        item { SettingRow(Icons.Rounded.Security, "حداقل سود خالص", formatToman(state.policy.minimumNetProfitToman), Gold400) }
-        item { SettingRow(Icons.Rounded.Analytics, "لغزش محافظه‌کارانه", "۰٫۱٪ در هر سمت", Color(0xFF8EB8E7)) }
-        item { SettingRow(Icons.Rounded.Autorenew, "ذخیره بازتوازن", "۰٫۰۳٪ ارزش میانی", Mint400) }
-        item { SettingRow(Icons.Rounded.NotificationsActive, "هشدار تلگرام", "در backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
-        item { SettingRow(Icons.Rounded.Security, "اجرای خودکار", "خاموش تا تأیید preview و مجوز API", Coral400) }
+        item { SectionTitle("Risk Controls", "READ-ONLY MONITOR") }
+        item { SettingRow(Icons.Rounded.Security, "Minimum Net Profit", formatToman(state.policy.minimumNetProfitToman), Gold400) }
+        item { SettingRow(Icons.Rounded.Analytics, "Conservative Slippage", "۰٫۱٪ در هر سمت", Color(0xFF8EB8E7)) }
+        item { SettingRow(Icons.Rounded.Autorenew, "Rebalancing Reserve", "۰٫۰۳٪ ارزش میانی", Mint400) }
+        item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
+        item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item {
             NoticeCard(
                 Icons.Rounded.Security,
                 "اصل امنیتی",
-                "اپ فقط endpointهای عمومی read-only را می‌خواند. توکن معامله، موجودی و کلید تلگرام باید در backend امن بماند؛ هیچ secretی داخل APK قرار نمی‌گیرد.",
+                "اپ فقط Endpointهای عمومی Read-only را می‌خواند. توکن معامله، موجودی و کلید تلگرام باید در Backend امن بماند؛ هیچ Secretی داخل APK قرار نمی‌گیرد.",
                 Mint400,
             )
         }
@@ -550,7 +550,7 @@ fun LockScreen(biometricAvailable: Boolean, onUnlock: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Icon(Icons.Rounded.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
-                Text("زرآرب قفل است", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                Text("زرگَرد قفل است", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                 Text(
                     if (biometricAvailable) "برای باز کردن، لمس کنید و هویت خود را تأیید کنید." else "قفل زیستی دستگاه در دسترس نیست.",
                     style = MaterialTheme.typography.bodyMedium,

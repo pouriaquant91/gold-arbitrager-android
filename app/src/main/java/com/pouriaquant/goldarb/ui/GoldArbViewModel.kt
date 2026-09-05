@@ -58,10 +58,10 @@ class GoldArbViewModel(
                     failedVenueNames = snapshot.failedVenueNames,
                     tokenizedGold = snapshot.tokenizedGold,
                     tokenizedGoldError = snapshot.tokenizedGoldError,
-                    errorMessage = if (snapshot.quotes.isEmpty()) "هیچ feed عمومی پاسخ نداد" else null,
+                    errorMessage = if (snapshot.quotes.isEmpty()) "هیچ Public Feed پاسخ نداد" else null,
                 )
             }.onFailure {
-                state = state.copy(isLoading = false, errorMessage = "به‌روزرسانی feedها ناموفق بود")
+                state = state.copy(isLoading = false, errorMessage = "به‌روزرسانی Live Feedها ناموفق بود")
             }
         }
     }

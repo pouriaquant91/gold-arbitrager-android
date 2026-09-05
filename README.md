@@ -1,4 +1,4 @@
-# زرآرب (ZarArb) — Android
+# زرگَرد (ZarGard) — Android
 
 نسخهٔ بومی Android برای پایش اختلاف قیمت طلای ۱۸ عیار میان پلتفرم‌های ایرانی؛ با رابط فارسی RTL، کنترل کیفیت quote و محاسبهٔ سود خالص پس از همهٔ هزینه‌ها.
 
@@ -20,9 +20,9 @@
 
 آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
 
-**[دانلود مستقیم زرآرب Android 0.4.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.4.0/ZarArb-android-v0.4.0-beta.apk)**
+**[دانلود مستقیم ZarGard Android 0.5.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.5.0/ZarGard-android-v0.5.0-beta.apk)**
 
-نسخهٔ ۰٫۴ ظاهر Emerald Luxury منتخب پروژه Pay an Installment، حالت روشن/تیره/سیستم، سبک Navy اختیاری و قفل اثر انگشت/قفل دستگاه را اضافه می‌کند.
+نسخهٔ ۰٫۵ برند و آیکون اختصاصی زرگَرد، متن‌های فنی آشناتر، ظاهر Emerald Luxury، حالت روشن/تیره/سیستم، سبک Navy اختیاری و قفل اثر انگشت/قفل دستگاه را ارائه می‌کند.
 
 فایل APK را روی گوشی باز کنید و در صورت درخواست Android، اجازهٔ نصب از همین مرورگر یا File Manager را فعال کنید. این build با کلید debug امضا شده و برای تست شخصی است؛ نسخهٔ انتشار نهایی بعداً با keystore اختصاصی و Play Integrity آماده می‌شود.
 

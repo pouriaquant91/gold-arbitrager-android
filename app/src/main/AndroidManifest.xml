@@ -6,11 +6,11 @@
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"
-        android:icon="@drawable/ic_launcher"
-        android:label="زرآرب"
+        android:icon="@drawable/ic_zargard_brand"
+        android:label="زرگَرد"
         android:localeConfig="@xml/locales_config"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:roundIcon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_zargard_brand"
         android:supportsRtl="true"
         android:theme="@style/Theme.GoldArbitrager">
         <activity

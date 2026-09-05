@@ -1,7 +1,9 @@
 *.iml
 .gradle/
 .gradle-user/
+.gradle-run/
 .android-user/
+.android-run/
 .user-home/
 .kotlin/
 /local.properties

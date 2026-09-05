@@ -29,5 +29,5 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v5
         with:
-          name: gold-arbitrager-debug
+          name: zargard-debug
           path: app/build/outputs/apk/debug/app-debug.apk

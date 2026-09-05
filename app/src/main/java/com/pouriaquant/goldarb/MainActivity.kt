@@ -110,7 +110,7 @@ class MainActivity : FragmentActivity() {
             },
         )
         val builder = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("ورود امن به زرآرب")
+            .setTitle("ورود امن به زرگَرد")
             .setSubtitle("با اثر انگشت، چهره یا قفل دستگاه وارد شوید")
             .setAllowedAuthenticators(authenticators())
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) builder.setNegativeButtonText("انصراف")
