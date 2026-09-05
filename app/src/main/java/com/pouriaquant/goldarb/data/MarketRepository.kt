@@ -273,7 +273,7 @@ class PublicFeedMarketRepository : MarketRepository {
             sellVenueName = sell.name,
             netProfitToman = net,
             netProfitTomanPer18kGram = netPer18kGram,
-            profitable = buyFill.complete && sellFill.complete && netPer18kGram >= 100_000,
+            profitable = buyFill.complete && sellFill.complete && net.isFinite() && net >= 100_000,
             receivedAt = Instant.now().toString(),
         )
     }
