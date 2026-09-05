@@ -24,6 +24,10 @@
 
 نسخهٔ ۰٫۵ برند و آیکون اختصاصی زرگَرد، متن‌های فنی آشناتر، ظاهر Emerald Luxury، حالت روشن/تیره/سیستم، سبک Navy اختیاری و قفل اثر انگشت/قفل دستگاه را ارائه می‌کند.
 
+## نسخه PWA
+
+نسخه نصب‌پذیر وب با همین برند در [ریپازیتوری ZarGard PWA](https://github.com/pouriaquant91/zargard-pwa) نگهداری می‌شود و از آدرس [zargard-pwa.ihamedcs.chatgpt.site](https://zargard-pwa.ihamedcs.chatgpt.site) قابل اجراست.
+
 فایل APK را روی گوشی باز کنید و در صورت درخواست Android، اجازهٔ نصب از همین مرورگر یا File Manager را فعال کنید. این build با کلید debug امضا شده و برای تست شخصی است؛ نسخهٔ انتشار نهایی بعداً با keystore اختصاصی و Play Integrity آماده می‌شود.
 
 ## مدل استراتژی
