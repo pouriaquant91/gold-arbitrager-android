@@ -14,9 +14,15 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-      - name: Verify shared distribution contract
+      - name: Verify local distribution contract
+        run: node scripts/verify-distribution-contract.mjs
+      - name: Verify Core contract when cross-repo token is configured
+        if: ${{ env.ZARGARD_SYNC_TOKEN != '' }}
+        env:
+          ZARGARD_SYNC_TOKEN: ${{ secrets.ZARGARD_SYNC_TOKEN }}
         run: |
           curl --fail --silent --show-error \
+            --header "Authorization: Bearer $ZARGARD_SYNC_TOKEN" \
             https://raw.githubusercontent.com/daredevilbizdev/gold-arbitrager/main/.zargard/distribution-contract.json \
             --output /tmp/core-distribution-contract.json
           cmp /tmp/core-distribution-contract.json .zargard/distribution-contract.json

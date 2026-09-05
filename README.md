@@ -46,7 +46,7 @@
 
 ### هماهنگی با Core و PWA
 
-فایل `.zargard/distribution-contract.json` مرجع نسخه و اعداد پوشش مشترک است. CI آن را با قرارداد شاخه `main` پروژه Core مقایسه می‌کند و APK ناسازگار را نمی‌سازد.
+فایل `.zargard/distribution-contract.json` مرجع نسخه و اعداد پوشش مشترک است. CI سازگاری آن با نسخه و اعداد داخل اپ را کنترل می‌کند. مقایسه خودکار با مخزن خصوصی Core پس از تنظیم Secret مشترک `ZARGARD_SYNC_TOKEN` نیز فعال می‌شود.
 
 پیش‌نیازها: JDK 17 و Android SDK 36.
 
