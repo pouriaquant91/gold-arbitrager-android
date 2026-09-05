@@ -50,23 +50,10 @@ data class Opportunity(
         get() = netProfitToman >= 100_000.0
 }
 
-data class TokenizedGoldComparison(
-    val quantityXaut: Double,
-    val equivalent18kGram: Double,
-    val buyVenueName: String,
-    val sellVenueName: String,
-    val netProfitToman: Double,
-    val netProfitTomanPer18kGram: Double,
-    val profitable: Boolean,
-    val receivedAt: String,
-)
-
 data class MarketSnapshot(
     val quotes: List<MarketQuote>,
     val receivedAt: String,
     val failedVenueNames: List<String>,
-    val tokenizedGold: TokenizedGoldComparison? = null,
-    val tokenizedGoldError: String? = null,
 )
 
 object ArbitrageCalculator {

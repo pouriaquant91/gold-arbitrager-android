@@ -79,7 +79,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.QuoteQuality
-import com.pouriaquant.goldarb.data.TokenizedGoldComparison
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.theme.Coral400
@@ -222,7 +221,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
                 MetricCard("No Feed", "۲۲", "۵ فعال + ۱۷ رزرو", Modifier.weight(1f), Coral400)
             }
         }
-        item { TokenizedGoldCard(state.tokenizedGold, state.tokenizedGoldError) }
+        item { MonitoringPlanCard() }
         item {
             SectionTitle("Live Quotes", "bid/ask جعلی تولید نمی‌شود")
         }
@@ -253,24 +252,18 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
 }
 
 @Composable
-private fun TokenizedGoldCard(comparison: TokenizedGoldComparison?, error: String?) {
+private fun MonitoringPlanCard() {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(22.dp), border = CardDefaults.outlinedCardBorder()) {
         Column(modifier = Modifier.padding(17.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text("مسیر جایگزین XAUT", style = MaterialTheme.typography.titleMedium)
-                    Text("XAUT Order Book · Wallex / Tabdeal", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("پایش برگشت جهت", style = MaterialTheme.typography.titleMedium)
+                    Text("72h initial screening · Iranian 18k gold", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                StatusPill(if (comparison?.profitable == true) "فرصت" else "پایش", if (comparison?.profitable == true) Mint400 else Gold400)
+                StatusPill("فعال", Mint400)
             }
-            when {
-                comparison != null -> {
-                    Text("خرید ${comparison.buyVenueName} ← فروش ${comparison.sellVenueName}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatToman(comparison.netProfitToman), style = MaterialTheme.typography.titleLarge, color = if (comparison.profitable) Mint400 else Coral400)
-                    Text("برای ${comparison.quantityXaut} XAUT (معادل ${String.format(Locale.US, "%.3f", comparison.equivalent18kGram)} گرم ۱۸ عیار)؛ کارمزد ۰٫۳۵٪ هر سمت، VAT کارمزد و بازتوازن کسر شده است.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                else -> Text(error ?: "در حال دریافت دفتر سفارش XAUT…", style = MaterialTheme.typography.bodyMedium, color = Coral400)
-            }
+            Text("فقط جفت‌های دارای bid/ask مستقیم، دو نمونهٔ پیوسته و سود خالص حداقل ۱۰۰ هزار تومان بررسی می‌شوند.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("تغییر جهت بین همان دو پلتفرم شرط تکرارپذیری است؛ تترگلد فعلاً متوقف شده.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -522,7 +515,7 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item { SectionTitle("Distribution", "ANDROID & PWA") }
-        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.6.0 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.0 Beta", Mint400) }
         item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(

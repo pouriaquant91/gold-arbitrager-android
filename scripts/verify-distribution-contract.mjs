@@ -27,5 +27,11 @@ assert.ok(ui.includes(`MetricCard("Platforms", "${fa(contract.coverage.catalogTo
 assert.ok(ui.includes(`MetricCard("No Feed", "${fa(contract.coverage.missingFeeds)}"`));
 assert.ok(ui.includes(`CoverageBucket("${fa(contract.coverage.configuredCollectors)}", "Public Collectors"`));
 assert.ok(ui.includes(`ZarGard Android ${contract.distribution.androidVersion} Beta`));
+assert.equal(contract.strategy.activePath, 'prefunded-cross-venue-inventory');
+assert.equal(contract.strategy.requiresDirectBidAsk, true);
+assert.equal(contract.strategy.requiresDirectionReversal, true);
+assert.equal(contract.strategy.initialScreeningHours, 72);
+assert.equal(contract.strategy.tokenizedGoldStatus, 'paused');
+assert.ok(ui.includes('72h initial screening'));
 
 console.log('Android distribution contract is consistent.');

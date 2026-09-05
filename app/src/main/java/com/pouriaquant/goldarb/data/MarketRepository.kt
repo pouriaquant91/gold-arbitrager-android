@@ -23,14 +23,10 @@ class PublicFeedMarketRepository : MarketRepository {
         load("گرامینو", ::fetchGeramino)?.let(quotes::add) ?: failed.add("گرامینو")
         load("داریک", ::fetchDaric)?.let(quotes::add) ?: failed.add("داریک")
 
-        val tokenizedGoldResult = runCatching(::fetchTokenizedGoldComparison)
-
         return MarketSnapshot(
             quotes = quotes.sortedWith(compareBy({ it.quality.ordinal }, { it.venueName })),
             receivedAt = Instant.now().toString(),
             failedVenueNames = failed,
-            tokenizedGold = tokenizedGoldResult.getOrNull(),
-            tokenizedGoldError = tokenizedGoldResult.exceptionOrNull()?.let { "دریافت XAUT از والکس/تبدیل ناموفق بود" },
         )
     }
 
@@ -47,7 +43,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.6")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.7")
             instanceFollowRedirects = true
         }
         return try {
@@ -205,76 +201,4 @@ class PublicFeedMarketRepository : MarketRepository {
         )
     }
 
-    private data class BookLevel(val price: Double, val quantity: Double)
-    private data class XautBook(val name: String, val asks: List<BookLevel>, val bids: List<BookLevel>)
-    private data class Fill(val total: Double, val complete: Boolean)
-
-    private fun fetchTokenizedGoldComparison(): TokenizedGoldComparison {
-        val wallexRaw = getJson("https://api.wallex.ir/v1/depth?symbol=XAUTTMN").getJSONObject("result")
-        val tabdealRaw = getJson("https://api1.tabdeal.org/r/api/v1/depth?symbol=XAUTIRT&limit=20")
-        val wallex = XautBook(
-            name = "والکس",
-            asks = objectLevels(wallexRaw.getJSONArray("ask"), ascending = true),
-            bids = objectLevels(wallexRaw.getJSONArray("bid"), ascending = false),
-        )
-        val tabdeal = XautBook(
-            name = "تبدیل",
-            asks = arrayLevels(tabdealRaw.getJSONArray("asks"), ascending = true),
-            bids = arrayLevels(tabdealRaw.getJSONArray("bids"), ascending = false),
-        )
-        val quantityXaut = 0.01
-        return listOf(
-            evaluateXautRoute(wallex, tabdeal, quantityXaut),
-            evaluateXautRoute(tabdeal, wallex, quantityXaut),
-        ).maxBy { it.netProfitToman }
-    }
-
-    private fun objectLevels(array: org.json.JSONArray, ascending: Boolean): List<BookLevel> =
-        (0 until array.length()).mapNotNull { index ->
-            val row = array.optJSONObject(index) ?: return@mapNotNull null
-            val price = row.optDouble("price")
-            val quantity = row.optDouble("quantity")
-            if (price > 0 && quantity > 0) BookLevel(price, quantity) else null
-        }.sortedWith(if (ascending) compareBy(BookLevel::price) else compareByDescending(BookLevel::price))
-
-    private fun arrayLevels(array: org.json.JSONArray, ascending: Boolean): List<BookLevel> =
-        (0 until array.length()).mapNotNull { index ->
-            val row = array.optJSONArray(index) ?: return@mapNotNull null
-            val price = row.optString(0).toDoubleOrNull() ?: return@mapNotNull null
-            val quantity = row.optString(1).toDoubleOrNull() ?: return@mapNotNull null
-            if (price > 0 && quantity > 0) BookLevel(price, quantity) else null
-        }.sortedWith(if (ascending) compareBy(BookLevel::price) else compareByDescending(BookLevel::price))
-
-    private fun fill(levels: List<BookLevel>, requested: Double): Fill {
-        var remaining = requested
-        var total = 0.0
-        for (level in levels) {
-            val quantity = minOf(remaining, level.quantity)
-            total += quantity * level.price
-            remaining -= quantity
-            if (remaining <= 1e-12) return Fill(total, true)
-        }
-        return Fill(total, false)
-    }
-
-    private fun evaluateXautRoute(buy: XautBook, sell: XautBook, quantityXaut: Double): TokenizedGoldComparison {
-        val buyFill = fill(buy.asks, quantityXaut)
-        val sellFill = fill(sell.bids, quantityXaut)
-        val tradingFee = (buyFill.total + sellFill.total) * 0.0035
-        val feeVat = tradingFee * 0.10
-        val rebalanceReserve = ((buyFill.total + sellFill.total) / 2) * 0.0005
-        val net = sellFill.total - buyFill.total - tradingFee - feeVat - rebalanceReserve
-        val equivalent18kGram = quantityXaut * 31.1034768 / 0.75
-        val netPer18kGram = net / equivalent18kGram
-        return TokenizedGoldComparison(
-            quantityXaut = quantityXaut,
-            equivalent18kGram = equivalent18kGram,
-            buyVenueName = buy.name,
-            sellVenueName = sell.name,
-            netProfitToman = net,
-            netProfitTomanPer18kGram = netPer18kGram,
-            profitable = buyFill.complete && sellFill.complete && net.isFinite() && net >= 100_000,
-            receivedAt = Instant.now().toString(),
-        )
-    }
 }

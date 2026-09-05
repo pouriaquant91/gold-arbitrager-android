@@ -1,11 +1,17 @@
 {
-  "schemaVersion": 1,
-  "updatedAt": "2026-09-05T14:08:22Z",
+  "schemaVersion": 2,
+  "updatedAt": "2026-09-05T15:05:00Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitToman": 100000,
     "feeVatRate": 0.1,
-    "mode": "paper-monitoring"
+    "mode": "paper-monitoring",
+    "activePath": "prefunded-cross-venue-inventory",
+    "requiresDirectBidAsk": true,
+    "requiresDirectionReversal": true,
+    "initialScreeningHours": 72,
+    "capitalDecisionDays": 30,
+    "tokenizedGoldStatus": "paused"
   },
   "coverage": {
     "catalogTotal": 56,
@@ -17,8 +23,8 @@
     "missingFeeds": 22
   },
   "distribution": {
-    "androidVersion": "0.6.0",
-    "pwaVersion": "0.1.0"
+    "androidVersion": "0.7.0",
+    "pwaVersion": "0.2.0"
   },
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",
