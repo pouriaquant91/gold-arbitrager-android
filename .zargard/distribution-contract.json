@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-05T14:08:22Z",
+  "productName": "ZarGard",
+  "strategy": {
+    "minimumNetProfitToman": 100000,
+    "feeVatRate": 0.1,
+    "mode": "paper-monitoring"
+  },
+  "coverage": {
+    "catalogTotal": 56,
+    "adapterSnapshots": 34,
+    "configuredCollectors": 28,
+    "acceptedProbe": 26,
+    "comparableTwoSided": 4,
+    "quarantinedTwoSided": 13,
+    "missingFeeds": 22
+  },
+  "distribution": {
+    "androidVersion": "0.6.0",
+    "pwaVersion": "0.1.0"
+  },
+  "repositories": {
+    "core": "https://github.com/daredevilbizdev/gold-arbitrager",
+    "android": "https://github.com/pouriaquant91/gold-arbitrager-android",
+    "pwa": "https://github.com/pouriaquant91/zargard-pwa"
+  }
+}

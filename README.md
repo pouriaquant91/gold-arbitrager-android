@@ -44,6 +44,10 @@
 
 ## ساخت پروژه
 
+### هماهنگی با Core و PWA
+
+فایل `.zargard/distribution-contract.json` مرجع نسخه و اعداد پوشش مشترک است. CI آن را با قرارداد شاخه `main` پروژه Core مقایسه می‌کند و APK ناسازگار را نمی‌سازد.
+
 پیش‌نیازها: JDK 17 و Android SDK 36.
 
 ```bash
