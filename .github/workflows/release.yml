@@ -37,12 +37,12 @@ jobs:
       - name: Test and build installable beta APK
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
       - name: Prepare release asset
-        run: cp app/build/outputs/apk/debug/app-debug.apk "ZarGard-${GITHUB_REF_NAME}-beta.apk"
+        run: cp app/build/outputs/apk/debug/app-debug.apk "ZarGard-android-${GITHUB_REF_NAME#android-v}-beta.apk"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
-          "ZarGard-${GITHUB_REF_NAME}-beta.apk"
+          "ZarGard-android-${GITHUB_REF_NAME#android-v}-beta.apk"
           --title "زرگَرد ${GITHUB_REF_NAME} Beta"
-          --notes "نسخه آزمایشی قابل نصب زرگَرد با آیکون اختصاصی، رابط Emerald، متن‌های فنی استاندارد، تم تیره/روشن، قفل اثر انگشت و مقایسه XAUT پس از همه هزینه‌ها. این نسخه سفارش واقعی ارسال نمی‌کند."
+          --notes "نسخه آزمایشی قابل نصب زرگَرد با تمرکز بر آربیتراژ مستقیم طلای ۱۸ عیار، رابط Emerald، تم تیره/روشن، قفل اثر انگشت و پایش برگشت جهت. XAUT در این نسخه متوقف است و برنامه سفارش واقعی ارسال نمی‌کند."
