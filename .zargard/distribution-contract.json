@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-05T15:05:00Z",
+  "updatedAt": "2026-09-06T09:50:00Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitToman": 100000,
@@ -14,6 +14,15 @@
     "initialScreeningHours": 72,
     "capitalDecisionDays": 30,
     "tokenizedGoldStatus": "paused"
+  },
+  "shadowValidation": {
+    "mode": "screening-only",
+    "minimumSchemaVersion": 2,
+    "minimumConsecutiveSamples": 2,
+    "entryCounting": "one-per-continuous-run",
+    "initialWindowHours": 72,
+    "alertsEnabled": false,
+    "plannedChannels": ["telegram", "sms"]
   },
   "coverage": {
     "catalogTotal": 56,
