@@ -22,6 +22,8 @@ class PublicFeedMarketRepository : MarketRepository {
         load("مهربان‌گلد", ::fetchMehrban)?.let(quotes::add) ?: failed.add("مهربان‌گلد")
         load("گرامینو", ::fetchGeramino)?.let(quotes::add) ?: failed.add("گرامینو")
         load("داریک", ::fetchDaric)?.let(quotes::add) ?: failed.add("داریک")
+        load("بازارطلا", ::fetchBazaretala)?.let(quotes::add) ?: failed.add("بازارطلا")
+        load("عیاره", ::fetchAyyareh)?.let(quotes::add) ?: failed.add("عیاره")
 
         return MarketSnapshot(
             quotes = quotes.sortedWith(compareBy({ it.quality.ordinal }, { it.venueName })),
@@ -43,7 +45,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.7.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.7.3")
             instanceFollowRedirects = true
         }
         return try {
@@ -52,6 +54,30 @@ class PublicFeedMarketRepository : MarketRepository {
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun getText(url: String): String {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 8_000
+            readTimeout = 8_000
+            setRequestProperty("Accept", "text/html, text/plain")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.7.3")
+            instanceFollowRedirects = true
+        }
+        return try {
+            require(connection.responseCode in 200..299) { "upstream-${connection.responseCode}" }
+            connection.inputStream.bufferedReader().use { it.readText() }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun extractPrice(raw: String, name: String): Double {
+        val value = Regex("$name\\s*=\\s*[\\\"']?([0-9,]+)", RegexOption.IGNORE_CASE)
+            .find(raw)?.groupValues?.getOrNull(1)?.replace(",", "")?.toDoubleOrNull()
+        require(value != null && value > 0) { "missing-$name" }
+        return value
     }
 
     private fun fetchBaazar(): MarketQuote {
@@ -198,6 +224,39 @@ class PublicFeedMarketRepository : MarketRepository {
             feeLabel = "bestSell/bestBuy عمومی است؛ کارمزد و timestamp هنوز تأیید نشده",
             sourceLabel = "REST عمومی",
             accent = 0xFFE0B968,
+        )
+    }
+
+    private fun fetchBazaretala(): MarketQuote {
+        val raw = getText("https://bazaretala.com/melted-gold-bar?ajax_request_price=true")
+        return MarketQuote(
+            venueId = "bazaretala",
+            venueName = "بازارطلا",
+            monogram = "ب",
+            askTomanPerGram = extractPrice(raw, "goldBuyPrice"),
+            bidTomanPerGram = extractPrice(raw, "goldSellPrice"),
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفه؛ بدون زمان منبع",
+            feeLabel = "خرید ۰٫۵٪ و فروش ۱٪ در نرخ صفحه؛ preview و اجازه polling لازم است",
+            sourceLabel = "REST رسمی",
+            accent = 0xFFD6B46D,
+        )
+    }
+
+    private fun fetchAyyareh(): MarketQuote {
+        val raw = getText("https://ayyareh.com/")
+        require(Regex("goldTransactionsInactive[\\\"']?\\s*:\\s*false", RegexOption.IGNORE_CASE).containsMatchIn(raw))
+        return MarketQuote(
+            venueId = "ayyareh",
+            venueName = "عیاره",
+            monogram = "ع",
+            askTomanPerGram = extractPrice(raw, "sellGoldPrice"),
+            bidTomanPerGram = extractPrice(raw, "buyGoldPrice"),
+            quality = QuoteQuality.QUARANTINED,
+            qualityLabel = "دوطرفه؛ موجودی دیجیتال نامشخص",
+            feeLabel = "نرخ رسمی عمومی؛ تا اثبات کیف دیجیتال قابل‌چرخش فقط نمایشی است",
+            sourceLabel = "HTML رسمی",
+            accent = 0xFFC49C71,
         )
     }
 

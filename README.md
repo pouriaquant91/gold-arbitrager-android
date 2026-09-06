@@ -14,14 +14,15 @@
 - قرنطینهٔ quoteهای فاقد timestamp یا fee تأییدشده
 - محاسبهٔ فرصت با کسر کارمزد، VAT کارمزد، لغزش دو سمت، بازتوازن و تسویه
 - آستانهٔ بدبینانهٔ پیش‌فرض: `100,000` تومان سود خالص
-- نمایش پوشش هماهنگ با وب: ۵۶ سکوی شناسایی‌شده، ۳۱ collector پیاده‌سازی‌شده و ۱۸ مورد بدون feed معتبر
+- نمایش پوشش هماهنگ با وب: ۵۶ سکوی شناسایی‌شده، ۳۳ collector پیاده‌سازی‌شده، ۲۹ پاسخ پذیرفته‌شده و ۱۶ مورد بدون feed معتبر
+- دریافت read-only قیمت دوطرفه بازارطلا و عیاره؛ هر دو تا تکمیل کنترل‌ها قرنطینه‌اند
 - CI برای اجرای unit test و ساخت debug APK در هر push
 
 ## نصب روی موبایل
 
 آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
 
-**[دانلود مستقیم ZarGard Android 0.7.2 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.7.2/ZarGard-android-0.7.2-beta.apk)**
+**[دانلود مستقیم ZarGard Android 0.7.3 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.7.3/ZarGard-android-0.7.3-beta.apk)**
 
 نسخهٔ ۰٫۷ تترگلد را از مسیر فعال حذف کرده و رابط را روی مقایسهٔ مستقیم طلای ۱۸ عیار، پایش برگشت جهت و مدل موجودی دوطرفه متمرکز می‌کند. ظاهر Emerald Luxury، تم روشن/تیره/سیستم، سبک Navy و قفل اثر انگشت حفظ شده‌اند.
 
@@ -42,6 +43,8 @@
 5. بازتوازن موجودی فقط به‌صورت دوره‌ای و با هزینهٔ ازپیش‌کسرشده انجام می‌شود.
 
 جزئیات مدل داده و مسیر سکوهای بدون feed در [docs/data-integrity.md](docs/data-integrity.md) و [docs/feed-discovery.md](docs/feed-discovery.md) آمده است.
+
+ممیزی کامل ۱۸ پلتفرم و تفکیک feed عمومی، حساب عادی، B2B و فروشگاه فیزیکی در [گزارش Core](https://github.com/daredevilbizdev/gold-arbitrager/blob/main/docs/exhaustive-feed-and-manual-trading-audit-1405-06-15.md) ثبت شده است.
 
 ## ساخت پروژه
 

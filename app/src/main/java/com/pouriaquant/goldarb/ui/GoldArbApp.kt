@@ -218,7 +218,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
                 MetricCard("Platforms", "۵۶", "Catalog", Modifier.weight(1f))
                 MetricCard("Live Feeds", toPersianDigits(state.quotes.size), "Direct", Modifier.weight(1f))
-                MetricCard("No Feed", "۱۸", "۵ فعال + ۱۳ رزرو", Modifier.weight(1f), Coral400)
+                MetricCard("No Feed", "۱۶", "۵ فعال + ۱۱ رزرو", Modifier.weight(1f), Coral400)
             }
         }
         item { MonitoringPlanCard() }
@@ -430,11 +430,11 @@ private fun CoverageScreen(padding: PaddingValues) {
     ) {
         item { ScreenHeader("پوشش داده", "۵۶ سکوی شناسایی‌شده") }
         item { CoverageBar() }
-        item { CoverageBucket("۳۱", "Public Collectors", "در Probe سرور ۲۸ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
+        item { CoverageBucket("۳۳", "Public Collectors", "در Probe سرور ۲۹ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
         item { CoverageBucket("۴", "Comparable bid/ask", "فقط زمان، جهت و ساختار هزینهٔ کافی وارد موتور می‌شود", Gold400, Icons.Rounded.WarningAmber) }
-        item { CoverageBucket("۳۳", "Quarantined / Reference", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
-        item { CoverageBucket("۱۸", "No Valid Feed", "۵ مورد در Discovery فعال و ۱۳ فروشگاه/قراردادی در رزرو هستند؛ ازکی alias طلاسی است", Coral400, Icons.Rounded.CloudOff) }
-        item { SectionTitle("برنامه ۱۸ سکوی باقیمانده", "از ارزان‌ترین مسیر اثبات شروع می‌کنیم") }
+        item { CoverageBucket("۳۵", "Quarantined / Reference", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
+        item { CoverageBucket("۱۶", "No Valid Feed", "۵ مسیر فعال و ۱۱ فروشگاه/قراردادی/غیرفعال در رزرو هستند؛ ازکی alias طلاسی است", Coral400, Icons.Rounded.CloudOff) }
+        item { SectionTitle("برنامه ۱۶ سکوی باقیمانده", "ابتدا preview حساب عادی؛ سپس پنل‌های معیوب") }
         item { ResearchLane("A", "Public Discovery", "بررسی Web Bundle، XHR، GraphQL، Socket.IO و Endpointهای Preview؛ بدون دورزدن احراز هویت.", "اولویت بالا") }
         item { ResearchLane("B", "Mobile App Inspection", "تحلیل ترافیک مجاز روی دستگاه خودمان، Deep Linkها و پاسخ‌های Pre-order برای bid/ask واقعی.", "پس از A") }
         item { ResearchLane("C", "Shared Backend", "تشخیص White-labelها؛ یک Feed معتبر ممکن است چند برند را پوشش دهد، ولی Venue مستقل فرض نمی‌شود.", "صرفه‌جویی بالا") }
@@ -516,7 +516,7 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item { SectionTitle("Distribution", "ANDROID & PWA") }
-        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.2 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.3 Beta", Mint400) }
         item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(
