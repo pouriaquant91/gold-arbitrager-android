@@ -218,7 +218,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
                 MetricCard("Platforms", "۵۶", "Catalog", Modifier.weight(1f))
                 MetricCard("Live Feeds", toPersianDigits(state.quotes.size), "Direct", Modifier.weight(1f))
-                MetricCard("No Feed", "۲۲", "۵ فعال + ۱۷ رزرو", Modifier.weight(1f), Coral400)
+                MetricCard("No Feed", "۱۸", "۵ فعال + ۱۳ رزرو", Modifier.weight(1f), Coral400)
             }
         }
         item { MonitoringPlanCard() }
@@ -430,11 +430,11 @@ private fun CoverageScreen(padding: PaddingValues) {
     ) {
         item { ScreenHeader("پوشش داده", "۵۶ سکوی شناسایی‌شده") }
         item { CoverageBar() }
-        item { CoverageBucket("۲۸", "Public Collectors", "در Probe اخیر ۲۶ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
+        item { CoverageBucket("۳۱", "Public Collectors", "در Probe سرور ۲۸ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
         item { CoverageBucket("۴", "Comparable bid/ask", "فقط زمان، جهت و ساختار هزینهٔ کافی وارد موتور می‌شود", Gold400, Icons.Rounded.WarningAmber) }
-        item { CoverageBucket("۳۰", "Quarantined / Reference", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
-        item { CoverageBucket("۲۲", "No Valid Feed", "۵ مورد در Discovery فعال و ۱۷ فروشگاه/قراردادی در رزرو هستند", Coral400, Icons.Rounded.CloudOff) }
-        item { SectionTitle("برنامه ۲۲ سکوی باقیمانده", "از ارزان‌ترین مسیر اثبات شروع می‌کنیم") }
+        item { CoverageBucket("۳۳", "Quarantined / Reference", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
+        item { CoverageBucket("۱۸", "No Valid Feed", "۵ مورد در Discovery فعال و ۱۳ فروشگاه/قراردادی در رزرو هستند؛ ازکی alias طلاسی است", Coral400, Icons.Rounded.CloudOff) }
+        item { SectionTitle("برنامه ۱۸ سکوی باقیمانده", "از ارزان‌ترین مسیر اثبات شروع می‌کنیم") }
         item { ResearchLane("A", "Public Discovery", "بررسی Web Bundle، XHR، GraphQL، Socket.IO و Endpointهای Preview؛ بدون دورزدن احراز هویت.", "اولویت بالا") }
         item { ResearchLane("B", "Mobile App Inspection", "تحلیل ترافیک مجاز روی دستگاه خودمان، Deep Linkها و پاسخ‌های Pre-order برای bid/ask واقعی.", "پس از A") }
         item { ResearchLane("C", "Shared Backend", "تشخیص White-labelها؛ یک Feed معتبر ممکن است چند برند را پوشش دهد، ولی Venue مستقل فرض نمی‌شود.", "صرفه‌جویی بالا") }
@@ -453,8 +453,9 @@ private fun CoverageBar() {
             Row(modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape)) {
                 Box(Modifier.weight(4f).fillMaxSize().background(Mint400))
                 Box(Modifier.weight(13f).fillMaxSize().background(Gold400))
-                Box(Modifier.weight(17f).fillMaxSize().background(Color(0xFF8EB8E7)))
-                Box(Modifier.weight(22f).fillMaxSize().background(Coral400.copy(alpha = 0.55f)))
+                Box(Modifier.weight(20f).fillMaxSize().background(Color(0xFF8EB8E7)))
+                Box(Modifier.weight(1f).fillMaxSize().background(MaterialTheme.colorScheme.outline))
+                Box(Modifier.weight(18f).fillMaxSize().background(Coral400.copy(alpha = 0.55f)))
             }
             Text("Feed داشتن با قابل معامله بودن یکی نیست؛ فقط Quote هم‌زمان، دوطرفه و هزینه‌کامل وارد سیگنال می‌شود.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -515,7 +516,7 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item { SectionTitle("Distribution", "ANDROID & PWA") }
-        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.1 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.2 Beta", Mint400) }
         item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(

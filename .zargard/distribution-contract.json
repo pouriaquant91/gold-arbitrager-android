@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-06T09:50:00Z",
+  "updatedAt": "2026-09-06T10:29:32Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitToman": 100000,
@@ -26,15 +26,15 @@
   },
   "coverage": {
     "catalogTotal": 56,
-    "adapterSnapshots": 34,
-    "configuredCollectors": 28,
-    "acceptedProbe": 26,
+    "adapterSnapshots": 37,
+    "configuredCollectors": 31,
+    "acceptedProbe": 28,
     "comparableTwoSided": 4,
     "quarantinedTwoSided": 13,
-    "missingFeeds": 22
+    "missingFeeds": 18
   },
   "distribution": {
-    "androidVersion": "0.7.1",
+    "androidVersion": "0.7.2",
     "pwaVersion": "0.2.1"
   },
   "repositories": {
