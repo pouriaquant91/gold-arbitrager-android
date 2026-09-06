@@ -4,6 +4,8 @@
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitToman": 100000,
+    "minimumNetProfitScope": "per-order",
+    "screeningQuantitiesGram": [0.2, 1, 5, 10],
     "feeVatRate": 0.1,
     "mode": "paper-monitoring",
     "activePath": "prefunded-cross-venue-inventory",
@@ -23,8 +25,8 @@
     "missingFeeds": 22
   },
   "distribution": {
-    "androidVersion": "0.7.0",
-    "pwaVersion": "0.2.0"
+    "androidVersion": "0.7.1",
+    "pwaVersion": "0.2.1"
   },
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",

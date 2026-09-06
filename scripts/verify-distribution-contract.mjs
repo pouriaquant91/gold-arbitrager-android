@@ -28,6 +28,8 @@ assert.ok(ui.includes(`MetricCard("No Feed", "${fa(contract.coverage.missingFeed
 assert.ok(ui.includes(`CoverageBucket("${fa(contract.coverage.configuredCollectors)}", "Public Collectors"`));
 assert.ok(ui.includes(`ZarGard Android ${contract.distribution.androidVersion} Beta`));
 assert.equal(contract.strategy.activePath, 'prefunded-cross-venue-inventory');
+assert.equal(contract.strategy.minimumNetProfitScope, 'per-order');
+assert.deepEqual(contract.strategy.screeningQuantitiesGram, [0.2, 1, 5, 10]);
 assert.equal(contract.strategy.requiresDirectBidAsk, true);
 assert.equal(contract.strategy.requiresDirectionReversal, true);
 assert.equal(contract.strategy.initialScreeningHours, 72);

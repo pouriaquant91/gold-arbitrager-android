@@ -375,7 +375,7 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
         item {
             NoticeCard(
                 Icons.Rounded.Security,
-                "گیت بدبینانه ${formatToman(state.policy.minimumNetProfitToman)}",
+                "گیت بدبینانه ${formatToman(state.policy.minimumNetProfitToman)} / سفارش",
                 "VAT فقط روی کارمزد، لغزش دو سمت، هزینه بازتوازن و تسویه از سود کم می‌شوند.",
                 Gold400,
             )
@@ -515,7 +515,7 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item { SectionTitle("Distribution", "ANDROID & PWA") }
-        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.0 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.7.1 Beta", Mint400) }
         item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(
