@@ -8,12 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.pouriaquant.goldarb.security.AppVisualStyle
 
-private val EmeraldDarkColors = darkColorScheme(
+private val ObsidianDarkColors = darkColorScheme(
     primary = Gold400,
     onPrimary = Pine950,
     primaryContainer = Pine800,
     onPrimaryContainer = Gold300,
-    secondary = Mint400,
+    secondary = Gold300,
     onSecondary = Pine950,
     tertiary = Sky400,
     background = Pine950,
@@ -28,22 +28,22 @@ private val EmeraldDarkColors = darkColorScheme(
     scrim = Color.Black,
 )
 
-private val EmeraldLightColors = lightColorScheme(
-    primary = Color(0xFF0D5C46),
+private val ObsidianLightColors = lightColorScheme(
+    primary = Color(0xFF8F6824),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCEDE5),
-    onPrimaryContainer = Color(0xFF07392C),
+    primaryContainer = Color(0xFFF2E4C5),
+    onPrimaryContainer = Color(0xFF3F2D0C),
     secondary = Color(0xFF8A682B),
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFF2E4C5),
     onSecondaryContainer = Color(0xFF4B3511),
-    background = Color(0xFFF6F3EB),
-    onBackground = Color(0xFF17201C),
-    surface = Color(0xFFFFFEFA),
-    onSurface = Color(0xFF17201C),
-    surfaceVariant = Color(0xFFECEFE9),
-    onSurfaceVariant = Color(0xFF606A64),
-    outline = Color(0xFFD8DED9),
+    background = Color(0xFFF4F2ED),
+    onBackground = Color(0xFF202124),
+    surface = Color(0xFFFFFDFA),
+    onSurface = Color(0xFF202124),
+    surfaceVariant = Color(0xFFECE9E3),
+    onSurfaceVariant = Color(0xFF66645F),
+    outline = Color(0xFFD5D1C8),
 )
 
 private val NavyDarkColors = darkColorScheme(
@@ -82,11 +82,11 @@ private val NavyLightColors = lightColorScheme(
 @Composable
 fun GoldArbTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    visualStyle: AppVisualStyle = AppVisualStyle.EMERALD_LUXURY,
+    visualStyle: AppVisualStyle = AppVisualStyle.OBSIDIAN_CHAMPAGNE,
     content: @Composable () -> Unit,
 ) {
     val colors = when (visualStyle) {
-        AppVisualStyle.EMERALD_LUXURY -> if (darkTheme) EmeraldDarkColors else EmeraldLightColors
+        AppVisualStyle.OBSIDIAN_CHAMPAGNE -> if (darkTheme) ObsidianDarkColors else ObsidianLightColors
         AppVisualStyle.NAVY_BANKING -> if (darkTheme) NavyDarkColors else NavyLightColors
     }
     MaterialTheme(

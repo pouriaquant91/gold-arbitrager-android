@@ -4,7 +4,7 @@ import android.content.Context
 
 enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 
-enum class AppVisualStyle { EMERALD_LUXURY, NAVY_BANKING }
+enum class AppVisualStyle { OBSIDIAN_CHAMPAGNE, NAVY_BANKING }
 
 class AppPreferences(context: Context) {
     private val preferences = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -22,9 +22,9 @@ class AppPreferences(context: Context) {
     var visualStyle: AppVisualStyle
         get() = runCatching {
             AppVisualStyle.valueOf(
-                preferences.getString(KEY_VISUAL_STYLE, AppVisualStyle.EMERALD_LUXURY.name).orEmpty(),
+                preferences.getString(KEY_VISUAL_STYLE, AppVisualStyle.OBSIDIAN_CHAMPAGNE.name).orEmpty(),
             )
-        }.getOrDefault(AppVisualStyle.EMERALD_LUXURY)
+        }.getOrDefault(AppVisualStyle.OBSIDIAN_CHAMPAGNE)
         set(value) = preferences.edit().putString(KEY_VISUAL_STYLE, value.name).apply()
 
     private companion object {

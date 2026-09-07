@@ -24,7 +24,7 @@ class MainActivity : FragmentActivity() {
     private var unlocked by mutableStateOf(true)
     private var biometricEnabled by mutableStateOf(false)
     private var themeMode by mutableStateOf(AppThemeMode.DARK)
-    private var visualStyle by mutableStateOf(AppVisualStyle.EMERALD_LUXURY)
+    private var visualStyle by mutableStateOf(AppVisualStyle.OBSIDIAN_CHAMPAGNE)
     private var authenticationRunning = false
 
     override fun onCreate(savedInstanceState: Bundle?) {

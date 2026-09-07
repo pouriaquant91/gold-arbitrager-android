@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-06T14:15:00Z",
+  "updatedAt": "2026-09-07T18:00:00Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitToman": 100000,
@@ -34,8 +34,8 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.7.3",
-    "pwaVersion": "0.2.2"
+    "androidVersion": "0.8.0",
+    "pwaVersion": "0.3.0"
   },
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",

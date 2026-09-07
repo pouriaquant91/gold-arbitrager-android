@@ -22,9 +22,9 @@
 
 آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
 
-**[دانلود مستقیم ZarGard Android 0.7.3 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.7.3/ZarGard-android-0.7.3-beta.apk)**
+**[دانلود مستقیم ZarGard Android 0.8.0 Beta](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.8.0/ZarGard-android-0.8.0-beta.apk)**
 
-نسخهٔ ۰٫۷ تترگلد را از مسیر فعال حذف کرده و رابط را روی مقایسهٔ مستقیم طلای ۱۸ عیار، پایش برگشت جهت و مدل موجودی دوطرفه متمرکز می‌کند. ظاهر Emerald Luxury، تم روشن/تیره/سیستم، سبک Navy و قفل اثر انگشت حفظ شده‌اند.
+نسخهٔ ۰٫۸ تترگلد را از مسیر فعال حذف کرده و رابط را روی مقایسهٔ مستقیم طلای ۱۸ عیار، پایش برگشت جهت و مدل موجودی دوطرفه متمرکز می‌کند. طراحی پیش‌فرض Obsidian + Champagne، تم روشن/تیره/سیستم، سبک Midnight Navy و قفل اثر انگشت در هر دو کلاینت هماهنگ‌اند.
 
 ## نسخه PWA
 
