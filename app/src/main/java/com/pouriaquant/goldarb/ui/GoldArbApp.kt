@@ -79,6 +79,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.QuoteQuality
+import com.pouriaquant.goldarb.data.ServerOpportunityRun
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.theme.Coral400
@@ -387,6 +388,30 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
         } else {
             items(state.opportunities.take(8)) { OpportunityCard(it) }
         }
+        item { SectionTitle("Server History", "Paper events · read-only") }
+        if (!state.serverConnected) {
+            item {
+                NoticeCard(
+                    Icons.Rounded.CloudOff,
+                    "Server unavailable",
+                    "Direct feeds همچنان مستقل کار می‌کنند؛ تاریخچه در refresh بعدی دوباره خوانده می‌شود.",
+                    Coral400,
+                )
+            }
+        } else if (state.serverRuns.isEmpty()) {
+            item { NoticeCard(Icons.Rounded.Storage, "هنوز رویدادی ثبت نشده", "اتصال server برقرار است اما history خالی است.", Gold400) }
+        } else {
+            items(state.serverRuns.take(8), key = { "${it.routeKey}:${it.startedAt}" }) { ServerRunCard(it) }
+            item {
+                Text(
+                    state.serverUpdatedAt?.let { "Server Sync: ${formatInstant(it)}" } ?: "Server connected",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
         item { SectionTitle("استراتژی تکرارپذیر", "inventory-neutral / بدون انتقال لحظه‌ای طلا") }
         item {
             StrategyStep("۱", "سرمایه دوطرفه", "در هر سکوی منتخب هم ریال و هم طلا نگهداری می‌شود.")
@@ -396,6 +421,42 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
         }
     }
 }
+
+@Composable
+private fun ServerRunCard(run: ServerOpportunityRun) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(20.dp), border = CardDefaults.outlinedCardBorder()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("${venueName(run.buyVenueId)} ← ${venueName(run.sellVenueId)}", style = MaterialTheme.typography.titleMedium)
+                StatusPill(if (run.status == "active") "فعال" else "بسته", if (run.status == "active") Mint400 else Gold400)
+            }
+            Text("عمر ${formatDuration(run.durationMs)} · ${toPersianDigits(run.sampleCount)} نمونه", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("محافظه‌کارانه ${formatToman(run.latestNetProfitToman)} · اوج ${formatToman(run.peakNetProfitToman)}", color = Gold400, fontWeight = FontWeight.Bold)
+            Text("Paper / نیازمند تأیید fee، VAT، عمق و موجودی؛ اجرا نشده", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun formatDuration(durationMs: Long?): String {
+    if (durationMs == null) return "در حال اندازه‌گیری"
+    val minutes = durationMs / 60_000.0
+    return if (minutes < 1) {
+        "${toPersianDigits((durationMs / 1_000).toInt())} ثانیه"
+    } else {
+        String.format(Locale.US, "%.1f دقیقه", minutes).replace('.', '٫')
+    }
+}
+
+private fun venueName(id: String): String = mapOf(
+    "milli" to "میلی",
+    "ecogold" to "اکوگلد",
+    "baazar" to "بازار",
+    "zarafza" to "زرافزا",
+    "talapp" to "طلاپ",
+    "geramino" to "گرامینو",
+    "goldika" to "گلدیکا",
+    "daric" to "داریک",
+)[id] ?: id
 
 @Composable
 private fun EmptyOpportunityCard() {
@@ -430,7 +491,7 @@ private fun CoverageScreen(padding: PaddingValues) {
     ) {
         item { ScreenHeader("پوشش داده", "۵۶ سکوی شناسایی‌شده") }
         item { CoverageBar() }
-        item { CoverageBucket("۳۳", "Public Collectors", "در Probe سرور ۲۹ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
+        item { CoverageBucket("۳۳", "Public Collectors", "در آخرین Probe سرور ۳۱ منبع پاسخ معتبر دادند؛ هر Quote یک Quality Gate مستقل دارد", Mint400, Icons.Rounded.CheckCircle) }
         item { CoverageBucket("۴", "Comparable bid/ask", "فقط زمان، جهت و ساختار هزینهٔ کافی وارد موتور می‌شود", Gold400, Icons.Rounded.WarningAmber) }
         item { CoverageBucket("۳۵", "Quarantined / Reference", "داده داریم، اما برای سیگنال اجرایی هنوز کافی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
         item { CoverageBucket("۱۶", "No Valid Feed", "۵ مسیر فعال و ۱۱ فروشگاه/قراردادی/غیرفعال در رزرو هستند؛ ازکی alias طلاسی است", Coral400, Icons.Rounded.CloudOff) }
@@ -516,7 +577,7 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item { SectionTitle("Distribution", "ANDROID & PWA") }
-        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.8.1 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.9.0 Beta", Mint400) }
         item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(

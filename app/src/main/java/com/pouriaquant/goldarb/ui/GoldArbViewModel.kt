@@ -11,6 +11,7 @@ import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.MarketRepository
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.PublicFeedMarketRepository
+import com.pouriaquant.goldarb.data.ServerOpportunityRun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,6 +25,9 @@ data class GoldArbUiState(
     val quantityGram: Double = 1.0,
     val policy: CostPolicy = CostPolicy(),
     val errorMessage: String? = null,
+    val serverRuns: List<ServerOpportunityRun> = emptyList(),
+    val serverConnected: Boolean = false,
+    val serverUpdatedAt: String? = null,
 )
 
 class GoldArbViewModel(
@@ -53,6 +57,9 @@ class GoldArbViewModel(
                     ),
                     receivedAt = snapshot.receivedAt,
                     failedVenueNames = snapshot.failedVenueNames,
+                    serverRuns = snapshot.serverRuns,
+                    serverConnected = snapshot.serverConnected,
+                    serverUpdatedAt = snapshot.serverUpdatedAt,
                     errorMessage = if (snapshot.quotes.isEmpty()) "هیچ Public Feed پاسخ نداد" else null,
                 )
             }.onFailure {

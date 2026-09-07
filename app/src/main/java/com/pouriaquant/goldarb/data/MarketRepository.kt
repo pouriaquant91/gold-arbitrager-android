@@ -19,16 +19,19 @@ class PublicFeedMarketRepository : MarketRepository {
         load("اکوگلد", ::fetchEcogold)?.let(quotes::add) ?: failed.add("اکوگلد")
         load("میلی", ::fetchMilli)?.let(quotes::add) ?: failed.add("میلی")
         load("زرافزا", ::fetchZarafza)?.let(quotes::add) ?: failed.add("زرافزا")
-        load("مهربان‌گلد", ::fetchMehrban)?.let(quotes::add) ?: failed.add("مهربان‌گلد")
         load("گرامینو", ::fetchGeramino)?.let(quotes::add) ?: failed.add("گرامینو")
         load("داریک", ::fetchDaric)?.let(quotes::add) ?: failed.add("داریک")
         load("بازارطلا", ::fetchBazaretala)?.let(quotes::add) ?: failed.add("بازارطلا")
-        load("عیاره", ::fetchAyyareh)?.let(quotes::add) ?: failed.add("عیاره")
+        val serverResult = runCatching(::fetchServerRuns)
+        val serverRuns = serverResult.getOrDefault(emptyList())
 
         return MarketSnapshot(
             quotes = quotes.sortedWith(compareBy({ it.quality.ordinal }, { it.venueName })),
             receivedAt = Instant.now().toString(),
             failedVenueNames = failed,
+            serverRuns = serverRuns,
+            serverConnected = serverResult.isSuccess,
+            serverUpdatedAt = serverRuns.maxByOrNull { it.updatedAt }?.updatedAt,
         )
     }
 
@@ -45,7 +48,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.8.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.9.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -62,7 +65,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.8.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.9.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -109,11 +112,14 @@ class PublicFeedMarketRepository : MarketRepository {
             askTomanPerGram = row.getDouble("buy_price"),
             bidTomanPerGram = row.getDouble("sell_price"),
             quality = QuoteQuality.QUARANTINED,
-            qualityLabel = "دوطرفه؛ fee در انتظار تأیید",
-            feeLabel = "کارمزد خرید ۰٫۵٪ اعلام شده؛ شمول در نرخ و fee فروش باید با preview تأیید شود",
+            qualityLabel = "دوطرفه؛ fee تأییدشده و بدون زمان دریافت مشترک",
+            feeLabel = "خرید ۰٫۰۵٪ از طلا و فروش ۱٪ از تومان؛ طبق preview یک‌گرم و ۰٫۲ گرم",
             sourceLabel = "REST رسمی",
             sourceTimestamp = row.optString("created_at").takeIf(String::isNotBlank),
             accent = 0xFF76C9A2,
+            buyCommissionRate = 0.0005,
+            sellCommissionRate = 0.01,
+            pricesIncludeCommission = false,
         )
     }
 
@@ -177,24 +183,6 @@ class PublicFeedMarketRepository : MarketRepository {
         )
     }
 
-    private fun fetchMehrban(): MarketQuote {
-        val payload = getJson("https://mehrban.gold/api/config/goldprice?isSite=true")
-        require(payload.optBoolean("isSuccess"))
-        val data = payload.getJSONObject("data")
-        return MarketQuote(
-            venueId = "mehrban-gold",
-            venueName = "مهربان‌گلد",
-            monogram = "م",
-            askTomanPerGram = data.getDouble("buy"),
-            bidTomanPerGram = data.getDouble("sell"),
-            quality = QuoteQuality.QUARANTINED,
-            qualityLabel = "دوطرفه؛ بدون زمان منبع",
-            feeLabel = "شمول fee و timestamp نیازمند تأیید مستقیم",
-            sourceLabel = "REST رسمی",
-            accent = 0xFFD7A173,
-        )
-    }
-
     private fun fetchGeramino(): MarketQuote {
         val data = getJson("https://api.geramino.com/gold").getJSONObject("gold_data")
         return MarketQuote(
@@ -243,21 +231,26 @@ class PublicFeedMarketRepository : MarketRepository {
         )
     }
 
-    private fun fetchAyyareh(): MarketQuote {
-        val raw = getText("https://ayyareh.com/")
-        require(Regex("goldTransactionsInactive[\\\"']?\\s*:\\s*false", RegexOption.IGNORE_CASE).containsMatchIn(raw))
-        return MarketQuote(
-            venueId = "ayyareh",
-            venueName = "عیاره",
-            monogram = "ع",
-            askTomanPerGram = extractPrice(raw, "sellGoldPrice"),
-            bidTomanPerGram = extractPrice(raw, "buyGoldPrice"),
-            quality = QuoteQuality.QUARANTINED,
-            qualityLabel = "دوطرفه؛ موجودی دیجیتال نامشخص",
-            feeLabel = "نرخ رسمی عمومی؛ تا اثبات کیف دیجیتال قابل‌چرخش فقط نمایشی است",
-            sourceLabel = "HTML رسمی",
-            accent = 0xFFC49C71,
-        )
+    private fun fetchServerRuns(): List<ServerOpportunityRun> {
+        val rows = getJson("https://zargard-pwa.ihamedcs.chatgpt.site/api/opportunities")
+            .getJSONArray("runs")
+        return (0 until rows.length()).map { index ->
+            val row = rows.getJSONObject(index)
+            ServerOpportunityRun(
+                routeKey = row.getString("route_key"),
+                buyVenueId = row.getString("buy_venue_id"),
+                sellVenueId = row.getString("sell_venue_id"),
+                status = row.getString("status"),
+                mode = row.getString("mode"),
+                startedAt = row.getString("started_at"),
+                endedAt = row.optString("ended_at").takeIf { it.isNotBlank() && it != "null" },
+                durationMs = if (row.isNull("duration_ms")) null else row.getLong("duration_ms"),
+                sampleCount = row.getInt("sample_count"),
+                peakNetProfitToman = row.getDouble("peak_net_profit_toman"),
+                latestNetProfitToman = row.getDouble("latest_net_profit_toman"),
+                updatedAt = row.getString("updated_at"),
+            )
+        }
     }
 
 }

@@ -54,6 +54,24 @@ data class MarketSnapshot(
     val quotes: List<MarketQuote>,
     val receivedAt: String,
     val failedVenueNames: List<String>,
+    val serverRuns: List<ServerOpportunityRun> = emptyList(),
+    val serverConnected: Boolean = false,
+    val serverUpdatedAt: String? = null,
+)
+
+data class ServerOpportunityRun(
+    val routeKey: String,
+    val buyVenueId: String,
+    val sellVenueId: String,
+    val status: String,
+    val mode: String,
+    val startedAt: String,
+    val endedAt: String?,
+    val durationMs: Long?,
+    val sampleCount: Int,
+    val peakNetProfitToman: Double,
+    val latestNetProfitToman: Double,
+    val updatedAt: String,
 )
 
 object ArbitrageCalculator {
