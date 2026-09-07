@@ -87,7 +87,7 @@ fun GoldArbTheme(
 ) {
     val colors = when (visualStyle) {
         AppVisualStyle.OBSIDIAN_CHAMPAGNE -> if (darkTheme) ObsidianDarkColors else ObsidianLightColors
-        AppVisualStyle.NAVY_BANKING -> if (darkTheme) NavyDarkColors else NavyLightColors
+        AppVisualStyle.MIDNIGHT_NAVY_WARM_GOLD -> if (darkTheme) NavyDarkColors else NavyLightColors
     }
     MaterialTheme(
         colorScheme = colors,

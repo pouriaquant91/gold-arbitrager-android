@@ -4,7 +4,7 @@ import android.content.Context
 
 enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 
-enum class AppVisualStyle { OBSIDIAN_CHAMPAGNE, NAVY_BANKING }
+enum class AppVisualStyle { OBSIDIAN_CHAMPAGNE, MIDNIGHT_NAVY_WARM_GOLD }
 
 class AppPreferences(context: Context) {
     private val preferences = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
@@ -20,11 +20,12 @@ class AppPreferences(context: Context) {
         set(value) = preferences.edit().putString(KEY_THEME_MODE, value.name).apply()
 
     var visualStyle: AppVisualStyle
-        get() = runCatching {
-            AppVisualStyle.valueOf(
-                preferences.getString(KEY_VISUAL_STYLE, AppVisualStyle.OBSIDIAN_CHAMPAGNE.name).orEmpty(),
-            )
-        }.getOrDefault(AppVisualStyle.OBSIDIAN_CHAMPAGNE)
+        get() {
+            val stored = preferences.getString(KEY_VISUAL_STYLE, AppVisualStyle.OBSIDIAN_CHAMPAGNE.name).orEmpty()
+            if (stored == "NAVY_BANKING") return AppVisualStyle.MIDNIGHT_NAVY_WARM_GOLD
+            return runCatching { AppVisualStyle.valueOf(stored) }
+                .getOrDefault(AppVisualStyle.OBSIDIAN_CHAMPAGNE)
+        }
         set(value) = preferences.edit().putString(KEY_VISUAL_STYLE, value.name).apply()
 
     private companion object {

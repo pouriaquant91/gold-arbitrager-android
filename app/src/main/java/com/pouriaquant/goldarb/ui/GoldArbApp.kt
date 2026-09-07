@@ -504,7 +504,7 @@ private fun SettingsScreen(
             ChoiceSettingRow(
                 icon = Icons.Rounded.Palette,
                 title = "Visual Style",
-                choices = listOf("Obsidian Gold" to AppVisualStyle.OBSIDIAN_CHAMPAGNE, "Midnight Navy" to AppVisualStyle.NAVY_BANKING),
+                choices = listOf("Obsidian + Champagne" to AppVisualStyle.OBSIDIAN_CHAMPAGNE, "Midnight Navy + Warm Gold" to AppVisualStyle.MIDNIGHT_NAVY_WARM_GOLD),
                 selected = visualStyle,
                 onSelected = onVisualStyleChanged,
             )
@@ -516,7 +516,7 @@ private fun SettingsScreen(
         item { SettingRow(Icons.Rounded.NotificationsActive, "Telegram Alerts", "در Backend؛ کلید داخل اپ ذخیره نمی‌شود", Gold400) }
         item { SettingRow(Icons.Rounded.Security, "Auto Trading", "خاموش تا تأیید Order Preview و مجوز API", Coral400) }
         item { SectionTitle("Distribution", "ANDROID & PWA") }
-        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.8.0 Beta", Mint400) }
+        item { SettingRow(Icons.Rounded.CheckCircle, "App Version", "ZarGard Android 0.8.1 Beta", Mint400) }
         item { SettingRow(Icons.Rounded.Storage, "PWA Companion", "zargard-pwa.ihamedcs.chatgpt.site", Gold400) }
         item {
             NoticeCard(
