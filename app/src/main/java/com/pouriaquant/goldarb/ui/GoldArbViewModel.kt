@@ -60,10 +60,10 @@ class GoldArbViewModel(
                     serverRuns = snapshot.serverRuns,
                     serverConnected = snapshot.serverConnected,
                     serverUpdatedAt = snapshot.serverUpdatedAt,
-                    errorMessage = if (snapshot.quotes.isEmpty()) "هیچ Public Feed پاسخ نداد" else null,
+                    errorMessage = if (snapshot.quotes.isEmpty()) "هنوز قیمتی دریافت نشده است" else null,
                 )
             }.onFailure {
-                state = state.copy(isLoading = false, errorMessage = "به‌روزرسانی Live Feedها ناموفق بود")
+                state = state.copy(isLoading = false, errorMessage = "دریافت قیمت‌های تازه ناموفق بود")
             }
         }
     }

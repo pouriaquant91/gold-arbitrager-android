@@ -18,15 +18,16 @@ const ui = readFileSync(
 
 const fa = (value) =>
   String(value).replace(/[0-9]/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
+const faVersion = (value) => fa(value).replaceAll('.', '٫');
 
 assert.match(
   build,
   new RegExp(`versionName = "${contract.distribution.androidVersion}"`),
 );
-assert.ok(ui.includes(`MetricCard("Platforms", "${fa(contract.coverage.catalogTotal)}"`));
-assert.ok(ui.includes(`MetricCard("No Feed", "${fa(contract.coverage.missingFeeds)}"`));
-assert.ok(ui.includes(`CoverageBucket("${fa(contract.coverage.configuredCollectors)}", "Public Collectors"`));
-assert.ok(ui.includes(`ZarGard Android ${contract.distribution.androidVersion} Beta`));
+assert.ok(ui.includes(`MetricCard("منابع", "${fa(contract.coverage.catalogTotal)}"`));
+assert.ok(ui.includes('MetricCard("ناموفق"'));
+assert.ok(ui.includes(`CoverageBucket("${fa(contract.coverage.catalogTotal)}", "منابع بررسی‌شده"`));
+assert.ok(ui.includes(`نسخه اندروید ${faVersion(contract.distribution.androidVersion)}`));
 assert.equal(contract.strategy.activePath, 'prefunded-cross-venue-inventory');
 assert.equal(contract.strategy.minimumNetProfitScope, 'per-order');
 assert.deepEqual(contract.strategy.screeningQuantitiesGram, [0.2, 1, 5, 10]);
@@ -34,6 +35,6 @@ assert.equal(contract.strategy.requiresDirectBidAsk, true);
 assert.equal(contract.strategy.requiresDirectionReversal, true);
 assert.equal(contract.strategy.initialScreeningHours, 72);
 assert.equal(contract.strategy.tokenizedGoldStatus, 'paused');
-assert.ok(ui.includes('72h initial screening'));
+assert.ok(ui.includes('زرگرد سفارشی ارسال نمی‌کند'));
 
 console.log('Android distribution contract is consistent.');
