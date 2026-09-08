@@ -4,6 +4,9 @@
 .gradle-run/
 .android-user/
 .android-run/
+.android-sdk/
+.android-sdk-install/
+.release-signing/
 .user-home/
 .kotlin/
 /local.properties
