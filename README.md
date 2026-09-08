@@ -22,7 +22,7 @@
 
 آخرین نسخهٔ آزمایشی را از لینک زیر دریافت کنید:
 
-نسخهٔ جاری پروژه **ZarGard Android 0.9.2** است. فایل نصب آزمایشی پس از ساخت در مسیر `artifacts/ZarGard-0.9.2-public.apk` قرار می‌گیرد؛ انتشارهای عمومی نیز در صفحهٔ [Releases](https://github.com/pouriaquant91/gold-arbitrager-android/releases) نگهداری می‌شوند.
+نسخهٔ جاری پروژه **ZarGard Android 0.9.2** است. **[دانلود مستقیم APK نسخهٔ 0.9.2](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.9.2/ZarGard-android-0.9.2-beta.apk)** برای نصب روی گوشی در دسترس است؛ همهٔ انتشارها نیز در صفحهٔ [Releases](https://github.com/pouriaquant91/gold-arbitrager-android/releases) نگهداری می‌شوند.
 
 نسخهٔ ۰٫۹٫۲ تترگلد و فروشگاه‌های خارج از محدوده را از مسیر فعال حذف کرده و رابط را با برچسب‌های روشن، توضیحات ساده و پیام‌های دقیق‌تر هماهنگ می‌کند. طراحی پیش‌فرض مشکی و طلایی، تم روشن/تیره/سیستم، سبک سرمه‌ای و طلایی و قفل اثر انگشت همچنان در دسترس‌اند.
 
