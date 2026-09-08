@@ -224,7 +224,7 @@ private fun MarketScreen(state: GoldArbUiState, onRefresh: () -> Unit, padding: 
         item { SafetyHero(state.opportunities.firstOrNull(), state.quotes.size, state.failedVenueNames.size) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                MetricCard("منابع", "۵۶", "بررسی‌شده", Modifier.weight(1f))
+                MetricCard("منابع", "۵۳", "بررسی‌شده", Modifier.weight(1f))
                 MetricCard("قیمت‌ها", toPersianDigits(state.quotes.size), "دریافت‌شده", Modifier.weight(1f))
                 MetricCard("ناموفق", toPersianDigits(state.failedVenueNames.size), "این نوبت", Modifier.weight(1f), Coral400)
             }
@@ -504,9 +504,9 @@ private fun CoverageScreen(padding: PaddingValues) {
     ) {
         item { ScreenHeader("منابع", "وضعیت دریافت قیمت") }
         item { CoverageBar() }
-        item { CoverageBucket("۵۶", "منابع بررسی‌شده", "فهرست پلتفرم‌هایی که تاکنون بررسی شده‌اند", Mint400, Icons.Rounded.CheckCircle) }
+        item { CoverageBucket("۵۳", "منابع بررسی‌شده", "فهرست پلتفرم‌هایی که تاکنون بررسی شده‌اند", Mint400, Icons.Rounded.CheckCircle) }
         item { CoverageBucket("۴", "آماده مقایسه", "قیمت خرید و فروشِ قابل مقایسه دارند", Gold400, Icons.Rounded.WarningAmber) }
-        item { CoverageBucket("۳۵", "فقط نمایش", "قیمت آن‌ها نمایش داده می‌شود اما در مقایسه نهایی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
+        item { CoverageBucket("۳۳", "فقط نمایش", "قیمت آن‌ها نمایش داده می‌شود اما در مقایسه نهایی نیست", Color(0xFF8EB8E7), Icons.Rounded.Analytics) }
         item { CoverageBucket("۱۶", "در حال بررسی", "برای دریافت قیمت پایدار دوباره بررسی می‌شوند", Coral400, Icons.Rounded.CloudOff) }
     }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-08T14:35:00Z",
+  "updatedAt": "2026-09-08T14:45:00Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitToman": 100000,
@@ -25,12 +25,12 @@
     "plannedChannels": ["telegram", "sms"]
   },
   "coverage": {
-    "catalogTotal": 56,
-    "adapterSnapshots": 39,
-    "configuredCollectors": 33,
-    "acceptedProbe": 29,
+    "catalogTotal": 53,
+    "adapterSnapshots": 36,
+    "configuredCollectors": 30,
+    "acceptedProbe": 26,
     "comparableTwoSided": 4,
-    "quarantinedTwoSided": 15,
+    "quarantinedTwoSided": 12,
     "missingFeeds": 16
   },
   "distribution": {
