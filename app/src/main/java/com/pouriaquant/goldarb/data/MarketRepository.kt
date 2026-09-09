@@ -7,16 +7,12 @@ import java.time.Instant
 
 interface MarketRepository {
     fun refresh(): MarketSnapshot
-    fun updateMinimumProfitRate(rate: Double): ServerStrategyState
-    fun recordTrade(
-        id: String,
-        venueId: String,
-        side: String,
-        quantityGram: Double,
-        totalToman: Double,
-        occurredAt: String,
-    ): ServerStrategyState
-    fun resetStrategyState(): ServerStrategyState
+    fun updateMinimumProfitRate(rate: Double, token: String): ServerStrategyState
+    fun account(token: String): AccountUser?
+    fun login(identifier: String, password: String): AuthSession
+    fun register(username: String, email: String, displayName: String, password: String): AuthSession
+    fun updateProfile(token: String, displayName: String, phone: String): AccountUser
+    fun logout(token: String)
 }
 
 class PublicFeedMarketRepository : MarketRepository {
@@ -63,7 +59,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.11.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -74,7 +70,7 @@ class PublicFeedMarketRepository : MarketRepository {
         }
     }
 
-    private fun postJson(url: String, payload: JSONObject): JSONObject {
+    private fun postJson(url: String, payload: JSONObject, token: String? = null): JSONObject {
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 8_000
@@ -82,7 +78,8 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.11.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
+            if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
             connection.outputStream.bufferedWriter().use { it.write(payload.toString()) }
@@ -99,7 +96,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.11.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -288,7 +285,7 @@ class PublicFeedMarketRepository : MarketRepository {
     }
 
     private fun parseStrategyState(payload: JSONObject): ServerStrategyState {
-        require(payload.getInt("schemaVersion") == 1 && payload.getString("storage") == "server")
+        require(payload.getInt("schemaVersion") == 2 && payload.getString("storage") == "server")
         val rows = payload.getJSONObject("positions")
         val positions = rows.keys().asSequence().associateWith { venueId ->
             val row = rows.getJSONObject(venueId)
@@ -300,7 +297,7 @@ class PublicFeedMarketRepository : MarketRepository {
             )
         }
         return ServerStrategyState(
-            schemaVersion = 1,
+            schemaVersion = 2,
             storage = "server",
             minimumProfitRate = payload.getDouble("minimumProfitRate"),
             revision = payload.getLong("revision"),
@@ -313,44 +310,56 @@ class PublicFeedMarketRepository : MarketRepository {
         getJson("$SERVER_BASE_URL/api/strategy-state"),
     )
 
-    override fun updateMinimumProfitRate(rate: Double): ServerStrategyState = parseStrategyState(
+    override fun updateMinimumProfitRate(rate: Double, token: String): ServerStrategyState = parseStrategyState(
         postJson(
             "$SERVER_BASE_URL/api/strategy-state",
             JSONObject().put("action", "settings").put("minimumProfitRate", rate),
+            token,
         ),
     )
 
-    override fun recordTrade(
-        id: String,
-        venueId: String,
-        side: String,
-        quantityGram: Double,
-        totalToman: Double,
-        occurredAt: String,
-    ): ServerStrategyState = parseStrategyState(
-        postJson(
-            "$SERVER_BASE_URL/api/strategy-state",
-            JSONObject().put("action", "trade").put(
-                "trade",
-                JSONObject()
-                    .put("id", id)
-                    .put("venueId", venueId)
-                    .put("side", side)
-                    .put("quantityGram", quantityGram)
-                    .put("totalToman", totalToman)
-                    .put("occurredAt", occurredAt),
-            ),
-        ),
+    private fun parseAccount(payload: JSONObject): AccountUser = AccountUser(
+        id = payload.getString("id"),
+        username = payload.getString("username"),
+        email = payload.getString("email"),
+        displayName = payload.getString("displayName"),
+        phone = payload.optString("phone").takeIf { it.isNotBlank() && it != "null" },
+        role = payload.getString("role"),
+        licensePlan = payload.getString("licensePlan"),
     )
 
-    override fun resetStrategyState(): ServerStrategyState = parseStrategyState(
-        postJson(
-            "$SERVER_BASE_URL/api/strategy-state",
-            JSONObject()
-                .put("action", "reset")
-                .put("confirmation", "RESET_SHARED_PAPER_STATE"),
-        ),
+    override fun account(token: String): AccountUser? {
+        val connection = (URL("$SERVER_BASE_URL/api/account").openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
+        }
+        return try {
+            if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {
+                val payload = JSONObject(it.readText())
+                if (!payload.optBoolean("authenticated")) null else parseAccount(payload)
+            }
+        } finally { connection.disconnect() }
+    }
+
+    override fun login(identifier: String, password: String): AuthSession {
+        val payload = postJson("$SERVER_BASE_URL/api/account", JSONObject().put("action", "login").put("identifier", identifier).put("password", password))
+        return AuthSession(parseAccount(payload), payload.getString("token"))
+    }
+
+    override fun register(username: String, email: String, displayName: String, password: String): AuthSession {
+        val payload = postJson("$SERVER_BASE_URL/api/account", JSONObject().put("action", "register").put("username", username).put("email", email).put("displayName", displayName).put("password", password))
+        return AuthSession(parseAccount(payload), payload.getString("token"))
+    }
+
+    override fun updateProfile(token: String, displayName: String, phone: String): AccountUser = parseAccount(
+        postJson("$SERVER_BASE_URL/api/account", JSONObject().put("action", "profile").put("displayName", displayName).put("phone", phone), token),
     )
+
+    override fun logout(token: String) {
+        postJson("$SERVER_BASE_URL/api/account", JSONObject().put("action", "logout"), token)
+    }
 
     private companion object {
         const val SERVER_BASE_URL = "https://zargard-pwa.ihamedcs.chatgpt.site"

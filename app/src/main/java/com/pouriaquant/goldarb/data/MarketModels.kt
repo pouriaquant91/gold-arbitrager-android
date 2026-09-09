@@ -31,7 +31,7 @@ data class CostPolicy(
     val sellSlippageRate: Double = 0.001,
     val rebalanceRate: Double = 0.0003,
     val settlementToman: Double = 20_000.0,
-    val minimumNetProfitRate: Double = 0.05,
+    val minimumNetProfitRate: Double = 0.005,
 )
 
 const val DEFAULT_VENUE_TOMAN_BALANCE = 50_000_000.0
@@ -79,6 +79,18 @@ data class ServerStrategyState(
     val updatedAt: String?,
     val positions: Map<String, VenuePosition>,
 )
+
+data class AccountUser(
+    val id: String,
+    val username: String,
+    val email: String,
+    val displayName: String,
+    val phone: String?,
+    val role: String,
+    val licensePlan: String,
+)
+
+data class AuthSession(val user: AccountUser, val token: String)
 
 data class ServerOpportunityRun(
     val routeKey: String,

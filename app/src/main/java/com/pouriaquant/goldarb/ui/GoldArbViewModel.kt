@@ -7,6 +7,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pouriaquant.goldarb.data.ArbitrageCalculator
+import com.pouriaquant.goldarb.data.AccountUser
 import com.pouriaquant.goldarb.data.CostPolicy
 import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.MarketRepository
@@ -14,8 +15,7 @@ import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.PublicFeedMarketRepository
 import com.pouriaquant.goldarb.data.ServerOpportunityRun
 import com.pouriaquant.goldarb.data.VenuePosition
-import java.time.Instant
-import java.util.UUID
+import com.pouriaquant.goldarb.security.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -33,16 +33,26 @@ data class GoldArbUiState(
     val serverConnected: Boolean = false,
     val serverUpdatedAt: String? = null,
     val positions: Map<String, VenuePosition> = emptyMap(),
+    val account: AccountUser? = null,
+    val accountMessage: String? = null,
 )
 
 class GoldArbViewModel(
     application: Application,
     private val repository: MarketRepository = PublicFeedMarketRepository(),
 ) : AndroidViewModel(application) {
+    private val preferences = AppPreferences(application)
     var state by mutableStateOf(GoldArbUiState())
         private set
 
     init {
+        preferences.sessionToken?.let { token ->
+            viewModelScope.launch {
+                val account = withContext(Dispatchers.IO) { repository.account(token) }
+                if (account == null) preferences.sessionToken = null
+                state = state.copy(account = account)
+            }
+        }
         refresh()
     }
 
@@ -85,43 +95,48 @@ class GoldArbViewModel(
     fun setMinimumProfitPercent(percent: Double) {
         val rate = (percent / 100).coerceIn(0.0, 1.0)
         viewModelScope.launch {
-            runCatching { withContext(Dispatchers.IO) { repository.updateMinimumProfitRate(rate) } }
+            val token = preferences.sessionToken ?: return@launch
+            runCatching { withContext(Dispatchers.IO) { repository.updateMinimumProfitRate(rate, token) } }
                 .onSuccess(::applyStrategyState)
                 .onFailure { state = state.copy(errorMessage = "ذخیره درصد سود روی سرور ناموفق بود") }
         }
     }
 
-    fun recordVenueConversion(venueId: String) {
-        val quote = state.quotes.firstOrNull { it.venueId == venueId } ?: return
-        val position = state.positions[venueId] ?: return
-        val selling = position.goldBalanceGram > 0
-        val price = if (selling) quote.bidTomanPerGram else quote.askTomanPerGram
-        if (price == null) return
-        val quantity = if (selling) position.goldBalanceGram else position.tomanBalance / price
-        val occurredAt = Instant.now().toString()
+    fun login(identifier: String, password: String) {
         viewModelScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) {
-                    repository.recordTrade(
-                        id = UUID.randomUUID().toString(),
-                        venueId = venueId,
-                        side = if (selling) "sell" else "buy",
-                        quantityGram = quantity,
-                        totalToman = quantity * price,
-                        occurredAt = occurredAt,
-                    )
-                }
-            }.onSuccess(::applyStrategyState)
-                .onFailure { state = state.copy(errorMessage = "ثبت معامله آزمایشی روی سرور ناموفق بود") }
+                withContext(Dispatchers.IO) { repository.login(identifier, password) }
+            }.onSuccess {
+                preferences.sessionToken = it.token
+                state = state.copy(account = it.user, accountMessage = "ورود انجام شد")
+            }.onFailure { state = state.copy(accountMessage = "اطلاعات ورود معتبر نیست") }
         }
     }
 
-    fun resetPositions() {
+    fun register(username: String, email: String, displayName: String, password: String) {
         viewModelScope.launch {
-            runCatching { withContext(Dispatchers.IO) { repository.resetStrategyState() } }
-                .onSuccess(::applyStrategyState)
-                .onFailure { state = state.copy(errorMessage = "بازنشانی حساب آزمایشی روی سرور ناموفق بود") }
+            runCatching { withContext(Dispatchers.IO) { repository.register(username, email, displayName, password) } }
+                .onSuccess {
+                    preferences.sessionToken = it.token
+                    state = state.copy(account = it.user, accountMessage = "حساب ساخته شد")
+                }.onFailure { state = state.copy(accountMessage = "ثبت‌نام ناموفق بود") }
         }
+    }
+
+    fun saveProfile(displayName: String, phone: String) {
+        val token = preferences.sessionToken ?: return
+        viewModelScope.launch {
+            runCatching { withContext(Dispatchers.IO) { repository.updateProfile(token, displayName, phone) } }
+                .onSuccess { state = state.copy(account = it, accountMessage = "اطلاعات ذخیره شد") }
+                .onFailure { state = state.copy(accountMessage = "ذخیره اطلاعات ناموفق بود") }
+        }
+    }
+
+    fun logout() {
+        val token = preferences.sessionToken
+        preferences.sessionToken = null
+        state = state.copy(account = null, accountMessage = null)
+        if (token != null) viewModelScope.launch { runCatching { withContext(Dispatchers.IO) { repository.logout(token) } } }
     }
 
     private fun applyStrategyState(server: com.pouriaquant.goldarb.data.ServerStrategyState) {

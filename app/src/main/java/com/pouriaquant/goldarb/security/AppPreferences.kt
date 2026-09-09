@@ -28,10 +28,18 @@ class AppPreferences(context: Context) {
         }
         set(value) = preferences.edit().putString(KEY_VISUAL_STYLE, value.name).apply()
 
+    var sessionToken: String?
+        get() = preferences.getString(KEY_SESSION_TOKEN, null)
+        set(value) {
+            if (value == null) preferences.edit().remove(KEY_SESSION_TOKEN).apply()
+            else preferences.edit().putString(KEY_SESSION_TOKEN, value).apply()
+        }
+
     private companion object {
         const val FILE_NAME = "zararb_preferences"
         const val KEY_BIOMETRIC_LOCK = "biometric_lock"
         const val KEY_THEME_MODE = "theme_mode"
         const val KEY_VISUAL_STYLE = "visual_style"
+        const val KEY_SESSION_TOKEN = "session_token"
     }
 }

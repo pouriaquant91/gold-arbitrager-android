@@ -30,7 +30,7 @@ assert.ok(ui.includes(`CoverageBucket("${fa(contract.coverage.catalogTotal)}", "
 assert.ok(ui.includes(`نسخه اندروید ${faVersion(contract.distribution.androidVersion)}`));
 assert.equal(contract.strategy.activePath, 'prefunded-cross-venue-inventory');
 assert.equal(contract.strategy.minimumNetProfitScope, 'per-order');
-assert.equal(contract.strategy.minimumNetProfitRate, 0.05);
+assert.equal(contract.strategy.minimumNetProfitRate, 0.005);
 assert.equal(contract.strategy.minimumNetProfitBasis, 'lower-leg-notional');
 assert.equal(contract.strategy.initialTomanBalancePerVenue, 50_000_000);
 assert.deepEqual(contract.strategy.screeningQuantitiesGram, [0.2, 1, 5, 10]);

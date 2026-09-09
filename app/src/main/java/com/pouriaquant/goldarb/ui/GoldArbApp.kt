@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -60,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,6 +74,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,6 +107,7 @@ private enum class AppSection(val label: String, val icon: ImageVector) {
     OPPORTUNITIES("فرصت‌ها", Icons.Rounded.SwapVert),
     PORTFOLIO("دارایی‌ها", Icons.Rounded.AccountBalanceWallet),
     COVERAGE("منابع", Icons.Rounded.Storage),
+    ACCOUNT("حساب", Icons.Rounded.AccountBalanceWallet),
     SETTINGS("تنظیمات", Icons.Rounded.Settings),
 }
 
@@ -151,8 +155,9 @@ fun GoldArbApp(
             when (AppSection.entries[sectionIndex]) {
                 AppSection.MARKET -> MarketScreen(state, viewModel::refresh, padding)
                 AppSection.OPPORTUNITIES -> OpportunityScreen(state, padding)
-                AppSection.PORTFOLIO -> PortfolioScreen(state, viewModel::recordVenueConversion, viewModel::resetPositions, padding)
+                AppSection.PORTFOLIO -> PortfolioScreen(state, padding)
                 AppSection.COVERAGE -> CoverageScreen(padding)
+                AppSection.ACCOUNT -> AccountScreen(state, viewModel::login, viewModel::register, viewModel::saveProfile, viewModel::logout, padding)
                 AppSection.SETTINGS -> SettingsScreen(
                     padding = padding,
                     biometricAvailable = biometricAvailable,
@@ -163,6 +168,7 @@ fun GoldArbApp(
                     onThemeModeChanged = onThemeModeChanged,
                     onVisualStyleChanged = onVisualStyleChanged,
                     minimumProfitRate = state.policy.minimumNetProfitRate,
+                    strategyEditable = state.account?.role == "root",
                     onMinimumProfitPercentChanged = viewModel::setMinimumProfitPercent,
                 )
             }
@@ -512,7 +518,7 @@ private fun OpportunityCard(opportunity: Opportunity) {
 }
 
 @Composable
-private fun PortfolioScreen(state: GoldArbUiState, onConvert: (String) -> Unit, onReset: () -> Unit, padding: PaddingValues) {
+private fun PortfolioScreen(state: GoldArbUiState, padding: PaddingValues) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding),
         contentPadding = PaddingValues(18.dp),
@@ -520,25 +526,18 @@ private fun PortfolioScreen(state: GoldArbUiState, onConvert: (String) -> Unit, 
     ) {
         item { ScreenHeader("دارایی پلتفرم‌ها", "همگام با حساب آزمایشی سرور") }
         item {
-            NoticeCard(Icons.Rounded.AccountBalanceWallet, "شروع با ۵۰ میلیون تومان برای هر پلتفرم", "پس از ثبت خرید، همان پلتفرم دارنده طلا محسوب می‌شود و فقط در سمت فروش قابل استفاده است.", Mint400)
+            NoticeCard(Icons.Rounded.AccountBalanceWallet, "شروع با ۵۰ میلیون تومان برای هر پلتفرم", "فقط موتور آزمون می‌تواند موجودی فرضی را تغییر دهد؛ کاربر معامله‌ای ثبت نمی‌کند.", Mint400)
         }
         items(state.quotes, key = { "position-${it.venueId}" }) { quote ->
-            PositionCard(quote, state.positions[quote.venueId], onConvert)
-        }
-        item {
-            Surface(
-                shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().clickable(onClick = onReset),
-            ) { Text("بازنشانی حساب آزمایشی روی سرور", modifier = Modifier.padding(15.dp), textAlign = TextAlign.Center, color = Coral400) }
+            PositionCard(quote, state.positions[quote.venueId])
         }
     }
 }
 
 @Composable
-private fun PositionCard(quote: MarketQuote, position: VenuePosition?, onConvert: (String) -> Unit) {
+private fun PositionCard(quote: MarketQuote, position: VenuePosition?) {
     if (position == null) return
     val holdingGold = position.goldBalanceGram > 0
-    val canConvert = if (holdingGold) quote.bidTomanPerGram != null else quote.askTomanPerGram != null
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp), border = CardDefaults.outlinedCardBorder()) {
         Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -546,13 +545,7 @@ private fun PositionCard(quote: MarketQuote, position: VenuePosition?, onConvert
                 StatusPill(if (holdingGold) "دارنده طلا" else "دارنده تومان", if (holdingGold) Gold400 else Mint400)
             }
             Text("تومان: ${formatToman(position.tomanBalance)} · طلا: ${String.format(Locale.US, "%.4f", position.goldBalanceGram).replace('.', '٫')} گرم", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (canConvert) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().clickable(enabled = canConvert) { onConvert(quote.venueId) },
-            ) {
-                Text(if (holdingGold) "ثبت فروش کل طلا" else "ثبت خرید با کل موجودی", modifier = Modifier.padding(12.dp), textAlign = TextAlign.Center, color = if (canConvert) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text("به‌روزرسانی فقط توسط آزمون خودکار سرور", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -594,6 +587,85 @@ private fun CoverageBar() {
 }
 
 @Composable
+private fun AccountScreen(
+    state: GoldArbUiState,
+    onLogin: (String, String) -> Unit,
+    onRegister: (String, String, String, String) -> Unit,
+    onSaveProfile: (String, String) -> Unit,
+    onLogout: () -> Unit,
+    padding: PaddingValues,
+) {
+    var registerMode by remember { mutableStateOf(false) }
+    var username by remember(state.account?.username) { mutableStateOf(state.account?.username.orEmpty()) }
+    var email by remember(state.account?.email) { mutableStateOf(state.account?.email.orEmpty()) }
+    var displayName by remember(state.account?.displayName) { mutableStateOf(state.account?.displayName.orEmpty()) }
+    var phone by remember(state.account?.phone) { mutableStateOf(state.account?.phone.orEmpty()) }
+    var password by remember { mutableStateOf("") }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(padding),
+        contentPadding = PaddingValues(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { ScreenHeader("حساب کاربری", "دسترسی و لایسنس آینده") }
+        item { NoticeCard(Icons.Rounded.Security, "حساب مستقل زرگَرد", "ورود به ChatGPT لازم نیست و حساب هیچ اجازه معامله واقعی ایجاد نمی‌کند.", Mint400) }
+        if (state.account == null) {
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AccountAction("ورود", !registerMode, Modifier.weight(1f)) { registerMode = false }
+                    AccountAction("ثبت‌نام", registerMode, Modifier.weight(1f)) { registerMode = true }
+                }
+            }
+            if (registerMode) {
+                item { AccountField("نام نمایشی", displayName, { displayName = it }) }
+                item { AccountField("ایمیل", email, { email = it }) }
+            }
+            item { AccountField(if (registerMode) "نام کاربری انگلیسی" else "نام کاربری یا ایمیل", username, { username = it }) }
+            item { AccountField("رمز عبور", password, { password = it }, password = true) }
+            item {
+                AccountAction(if (registerMode) "ساخت حساب" else "ورود", true, Modifier.fillMaxWidth()) {
+                    if (registerMode) onRegister(username, email, displayName, password) else onLogin(username, password)
+                }
+            }
+        } else {
+            item { AccountField("نام نمایشی", displayName, { displayName = it }) }
+            item { AccountField("شماره تماس", phone, { phone = it }) }
+            item { Text("نام کاربری: ${state.account.username} · سطح: ${state.account.role} · طرح: ${state.account.licensePlan}", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item { AccountAction("ذخیره اطلاعات", true, Modifier.fillMaxWidth()) { onSaveProfile(displayName, phone) } }
+            item { AccountAction("خروج", false, Modifier.fillMaxWidth(), onLogout) }
+        }
+        state.accountMessage?.let { message -> item { Text(message, color = Gold400, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) } }
+    }
+}
+
+@Composable
+private fun AccountField(label: String, value: String, onValueChange: (String) -> Unit, password: Boolean = false) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Surface(shape = RoundedCornerShape(13.dp), color = MaterialTheme.colorScheme.surfaceVariant, border = CardDefaults.outlinedCardBorder()) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                visualTransformation = if (password) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountAction(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(13.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+        modifier = modifier.clickable(onClick = onClick),
+    ) {
+        Text(label, modifier = Modifier.padding(14.dp), textAlign = TextAlign.Center, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
 private fun SettingsScreen(
     padding: PaddingValues,
     biometricAvailable: Boolean,
@@ -604,6 +676,7 @@ private fun SettingsScreen(
     onThemeModeChanged: (AppThemeMode) -> Unit,
     onVisualStyleChanged: (AppVisualStyle) -> Unit,
     minimumProfitRate: Double,
+    strategyEditable: Boolean,
     onMinimumProfitPercentChanged: (Double) -> Unit,
 ) {
     LazyColumn(
@@ -623,13 +696,14 @@ private fun SettingsScreen(
             )
         }
         item { SectionTitle("استراتژی سرور", "درصد از قیمت کمتر دو سمت؛ مشترک با PWA") }
+        if (!strategyEditable) item { NoticeCard(Icons.Rounded.Lock, "فقط مدیر root", "مشاهده برای همه آزاد است؛ تغییر آستانه فقط با حساب root انجام می‌شود.", Gold400) }
         item {
             ChoiceSettingRow(
                 icon = Icons.Rounded.Analytics,
                 title = "حداقل سود پویا",
-                choices = listOf("۲٪" to 2.0, "۵٪" to 5.0, "۱۰٪" to 10.0),
+                choices = listOf("۰٫۵٪" to 0.5, "۱٪" to 1.0, "۲٪" to 2.0),
                 selected = minimumProfitRate * 100,
-                onSelected = onMinimumProfitPercentChanged,
+                onSelected = { if (strategyEditable) onMinimumProfitPercentChanged(it) },
             )
         }
         item { SectionTitle("ظاهر برنامه", "انتخاب روشنایی و رنگ‌بندی") }
@@ -651,7 +725,7 @@ private fun SettingsScreen(
                 onSelected = onVisualStyleChanged,
             )
         }
-        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۱٫۰") }
+        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۲٫۰") }
         item {
             NoticeCard(
                 Icons.Rounded.Security,

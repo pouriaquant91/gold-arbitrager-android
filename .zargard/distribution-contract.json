@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "updatedAt": "2026-09-09T21:00:00Z",
   "productName": "ZarGard",
   "strategy": {
-    "minimumNetProfitRate": 0.05,
+    "minimumNetProfitRate": 0.005,
     "minimumNetProfitBasis": "lower-leg-notional",
     "minimumNetProfitScope": "per-order",
     "initialTomanBalancePerVenue": 50000000,
@@ -13,7 +13,9 @@
     "stateWorkspace": "shared-paper-testing",
     "screeningQuantitiesGram": [0.2, 1, 5, 10],
     "feeVatRate": 0.1,
-    "mode": "paper-monitoring",
+    "mode": "automatic-paper-testing",
+    "userTradingEnabled": false,
+    "paperResultsEndpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/paper-tests",
     "activePath": "prefunded-cross-venue-inventory",
     "requiresDirectBidAsk": true,
     "requiresDirectionReversal": true,
@@ -40,8 +42,15 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.11.0",
-    "pwaVersion": "0.5.0"
+    "androidVersion": "0.12.0",
+    "pwaVersion": "0.6.0"
+  },
+  "identity": {
+    "provider": "zargard-server",
+    "endpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/account",
+    "roles": ["root", "admin", "user"],
+    "profileEditing": true,
+    "futureLicensingReady": true
   },
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",

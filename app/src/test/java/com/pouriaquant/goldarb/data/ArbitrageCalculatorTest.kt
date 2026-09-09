@@ -20,8 +20,8 @@ class ArbitrageCalculatorTest {
         assertEquals(45_000.0, result.slippageReserveToman, 0.001)
         assertEquals(6_750.0, result.rebalanceReserveToman, 0.001)
         assertEquals(928_250.0, result.netProfitToman, 0.001)
-        assertEquals(1_100_000.0, result.minimumRequiredProfitToman, 0.001)
-        assertTrue(!result.crossesSafetyThreshold)
+        assertEquals(110_000.0, result.minimumRequiredProfitToman, 0.001)
+        assertTrue(result.crossesSafetyThreshold)
     }
 
     @Test
