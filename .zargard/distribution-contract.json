@@ -42,8 +42,8 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.12.1",
-    "pwaVersion": "0.6.1"
+    "androidVersion": "0.13.0",
+    "pwaVersion": "0.7.0"
   },
   "identity": {
     "provider": "zargard-server",
