@@ -41,6 +41,19 @@ data class VenuePosition(
     val tomanBalance: Double = DEFAULT_VENUE_TOMAN_BALANCE,
     val goldBalanceGram: Double = 0.0,
     val updatedAt: String,
+    val initialTomanBalance: Double = DEFAULT_VENUE_TOMAN_BALANCE,
+    val initialGoldBalanceGram: Double = 0.0,
+    val latestPriceToman: Double? = null,
+    val currentEquityToman: Double = DEFAULT_VENUE_TOMAN_BALANCE,
+    val profitLossToman: Double = 0.0,
+    val returnRate: Double = 0.0,
+)
+
+data class PortfolioSummary(
+    val initialToman: Double,
+    val currentToman: Double,
+    val profitLossToman: Double,
+    val returnRate: Double,
 )
 
 data class Opportunity(
@@ -78,6 +91,7 @@ data class ServerStrategyState(
     val revision: Long,
     val updatedAt: String?,
     val positions: Map<String, VenuePosition>,
+    val portfolio: PortfolioSummary,
 )
 
 data class AccountUser(

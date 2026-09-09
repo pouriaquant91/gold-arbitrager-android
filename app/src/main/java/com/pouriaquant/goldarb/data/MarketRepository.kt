@@ -59,7 +59,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -78,7 +78,7 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
@@ -96,7 +96,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -291,11 +291,18 @@ class PublicFeedMarketRepository : MarketRepository {
             val row = rows.getJSONObject(venueId)
             VenuePosition(
                 venueId = row.getString("venueId"),
+                initialTomanBalance = row.optDouble("initialTomanBalance", DEFAULT_VENUE_TOMAN_BALANCE),
+                initialGoldBalanceGram = row.optDouble("initialGoldBalanceGram", 0.0),
                 tomanBalance = row.getDouble("tomanBalance"),
                 goldBalanceGram = row.getDouble("goldBalanceGram"),
+                latestPriceToman = row.optDouble("latestPriceToman").takeIf { !row.isNull("latestPriceToman") },
+                currentEquityToman = row.optDouble("currentEquityToman", row.getDouble("tomanBalance")),
+                profitLossToman = row.optDouble("profitLossToman", 0.0),
+                returnRate = row.optDouble("returnRate", 0.0),
                 updatedAt = row.getString("updatedAt"),
             )
         }
+        val portfolioRow = payload.getJSONObject("portfolio")
         return ServerStrategyState(
             schemaVersion = 2,
             storage = "server",
@@ -303,6 +310,12 @@ class PublicFeedMarketRepository : MarketRepository {
             revision = payload.getLong("revision"),
             updatedAt = payload.optString("updatedAt").takeIf { it.isNotBlank() && it != "null" },
             positions = positions,
+            portfolio = PortfolioSummary(
+                initialToman = portfolioRow.getDouble("initialToman"),
+                currentToman = portfolioRow.getDouble("currentToman"),
+                profitLossToman = portfolioRow.getDouble("profitLossToman"),
+                returnRate = portfolioRow.getDouble("returnRate"),
+            ),
         )
     }
 
@@ -333,7 +346,7 @@ class PublicFeedMarketRepository : MarketRepository {
             requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
         }
         return try {
             if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {
