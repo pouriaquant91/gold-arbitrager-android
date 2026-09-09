@@ -10,12 +10,12 @@
     "inventoryStateVersion": 1,
     "stateStorage": "server-d1",
     "stateEndpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/strategy-state",
-    "stateWorkspace": "shared-paper-testing",
+    "stateWorkspace": "shared-strategy-calculation",
     "screeningQuantitiesGram": [0.2, 1, 5, 10],
     "feeVatRate": 0.1,
-    "mode": "automatic-paper-testing",
+    "mode": "automatic-formula-calculation",
     "userTradingEnabled": false,
-    "paperResultsEndpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/paper-tests",
+    "paperResultsEndpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/strategy-calculations",
     "activePath": "prefunded-cross-venue-inventory",
     "requiresDirectBidAsk": true,
     "requiresDirectionReversal": true,
@@ -24,7 +24,7 @@
     "tokenizedGoldStatus": "paused"
   },
   "shadowValidation": {
-    "mode": "screening-only",
+    "mode": "formula-monitoring",
     "minimumSchemaVersion": 3,
     "minimumConsecutiveSamples": 2,
     "entryCounting": "one-per-continuous-run",
@@ -42,8 +42,8 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.12.0",
-    "pwaVersion": "0.6.0"
+    "androidVersion": "0.12.1",
+    "pwaVersion": "0.6.1"
   },
   "identity": {
     "provider": "zargard-server",

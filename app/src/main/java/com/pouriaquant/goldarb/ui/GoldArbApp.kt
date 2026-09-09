@@ -526,7 +526,7 @@ private fun PortfolioScreen(state: GoldArbUiState, padding: PaddingValues) {
     ) {
         item { ScreenHeader("دارایی پلتفرم‌ها", "همگام با حساب آزمایشی سرور") }
         item {
-            NoticeCard(Icons.Rounded.AccountBalanceWallet, "شروع با ۵۰ میلیون تومان برای هر پلتفرم", "فقط موتور آزمون می‌تواند موجودی فرضی را تغییر دهد؛ کاربر معامله‌ای ثبت نمی‌کند.", Mint400)
+            NoticeCard(Icons.Rounded.AccountBalanceWallet, "شروع با ۵۰ میلیون تومان برای هر پلتفرم", "موقعیت‌ها از نتیجه محاسبه استراتژی روی سرور به‌روزرسانی می‌شوند؛ کاربر معامله‌ای ثبت نمی‌کند.", Mint400)
         }
         items(state.quotes, key = { "position-${it.venueId}" }) { quote ->
             PositionCard(quote, state.positions[quote.venueId])
@@ -545,7 +545,7 @@ private fun PositionCard(quote: MarketQuote, position: VenuePosition?) {
                 StatusPill(if (holdingGold) "دارنده طلا" else "دارنده تومان", if (holdingGold) Gold400 else Mint400)
             }
             Text("تومان: ${formatToman(position.tomanBalance)} · طلا: ${String.format(Locale.US, "%.4f", position.goldBalanceGram).replace('.', '٫')} گرم", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("به‌روزرسانی فقط توسط آزمون خودکار سرور", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("به‌روزرسانی فقط توسط محاسبه خودکار سرور", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -725,7 +725,7 @@ private fun SettingsScreen(
                 onSelected = onVisualStyleChanged,
             )
         }
-        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۲٫۰") }
+        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۲٫۱") }
         item {
             NoticeCard(
                 Icons.Rounded.Security,

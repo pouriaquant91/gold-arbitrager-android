@@ -59,7 +59,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
             instanceFollowRedirects = true
         }
         return try {
@@ -78,7 +78,7 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
@@ -96,7 +96,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
             instanceFollowRedirects = true
         }
         return try {
@@ -333,7 +333,7 @@ class PublicFeedMarketRepository : MarketRepository {
             requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.12.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.12.1")
         }
         return try {
             if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {
