@@ -32,6 +32,8 @@ import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
@@ -78,6 +80,7 @@ import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.QuoteQuality
 import com.pouriaquant.goldarb.data.ServerOpportunityRun
+import com.pouriaquant.goldarb.data.VenuePosition
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.theme.Coral400
@@ -99,6 +102,7 @@ import java.util.Locale
 private enum class AppSection(val label: String, val icon: ImageVector) {
     MARKET("قیمت‌ها", Icons.Rounded.Dashboard),
     OPPORTUNITIES("فرصت‌ها", Icons.Rounded.SwapVert),
+    PORTFOLIO("دارایی‌ها", Icons.Rounded.AccountBalanceWallet),
     COVERAGE("منابع", Icons.Rounded.Storage),
     SETTINGS("تنظیمات", Icons.Rounded.Settings),
 }
@@ -147,6 +151,7 @@ fun GoldArbApp(
             when (AppSection.entries[sectionIndex]) {
                 AppSection.MARKET -> MarketScreen(state, viewModel::refresh, padding)
                 AppSection.OPPORTUNITIES -> OpportunityScreen(state, padding)
+                AppSection.PORTFOLIO -> PortfolioScreen(state, viewModel::recordVenueConversion, viewModel::resetPositions, padding)
                 AppSection.COVERAGE -> CoverageScreen(padding)
                 AppSection.SETTINGS -> SettingsScreen(
                     padding = padding,
@@ -157,6 +162,8 @@ fun GoldArbApp(
                     onBiometricChanged = onBiometricChanged,
                     onThemeModeChanged = onThemeModeChanged,
                     onVisualStyleChanged = onVisualStyleChanged,
+                    minimumProfitRate = state.policy.minimumNetProfitRate,
+                    onMinimumProfitPercentChanged = viewModel::setMinimumProfitPercent,
                 )
             }
         }
@@ -269,7 +276,7 @@ private fun MonitoringPlanCard() {
                 }
                 StatusPill("فعال", Mint400)
             }
-            Text("فقط جفت‌های دارای bid/ask مستقیم، دو نمونهٔ پیوسته و سود خالص حداقل ۱۰۰ هزار تومان بررسی می‌شوند.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("فقط جفت‌های دارای bid/ask مستقیم، دو نمونهٔ پیوسته و سود بالاتر از درصد تنظیم‌شدهٔ قیمت کمتر جفت بررسی می‌شوند.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("تغییر جهت بین همان دو پلتفرم شرط تکرارپذیری است؛ تترگلد فعلاً متوقف شده.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -359,6 +366,9 @@ private fun QuoteCard(quote: MarketQuote) {
                     }
                 }
             }
+            if (quote.askTomanPerGram == null && quote.bidTomanPerGram == null && quote.referenceTomanPerGram == null) {
+                Text("قیمت معتبر این منبع فعلاً دریافت نشده؛ ردیف حذف نشده است.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             quote.sourceTimestamp?.let {
                 Text("زمان منبع: $it", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -389,8 +399,8 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
         item {
             NoticeCard(
                 Icons.Rounded.Security,
-                "حداقل اختلاف موردنظر ${formatToman(state.policy.minimumNetProfitToman)}",
-                "نتیجه پس از هزینه‌های شناخته‌شده نمایش داده می‌شود و باید پیش از اقدام دوباره بررسی شود.",
+                "آستانه پویا ${toPersianDigits((state.policy.minimumNetProfitRate * 100).toInt())}٪",
+                "حداقل سود از درصد قیمت کمتر دو سمت و حجم معامله محاسبه می‌شود.",
                 Gold400,
             )
         }
@@ -399,7 +409,7 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
                 EmptyOpportunityCard()
             }
         } else {
-            items(state.opportunities.take(8)) { OpportunityCard(it) }
+            items(state.opportunities) { OpportunityCard(it) }
         }
         item { SectionTitle("فرصت‌های ثبت‌شده", "فقط نمایش؛ بدون ارسال سفارش") }
         if (!state.serverConnected) {
@@ -491,6 +501,58 @@ private fun OpportunityCard(opportunity: Opportunity) {
                 Text(formatToman(opportunity.netProfitToman), color = if (opportunity.crossesSafetyThreshold) Mint400 else Coral400, fontWeight = FontWeight.Bold)
             }
             Text("اختلاف نهایی پس از هزینه‌های شناخته‌شده", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                if (opportunity.inventoryReady) "موجودی دو سمت آماده است" else "نیازمند تومان در سکوی خرید و طلا در سکوی فروش",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (opportunity.inventoryReady) Mint400 else Gold400,
+            )
+            Text("آستانه این جفت: ${formatToman(opportunity.minimumRequiredProfitToman)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun PortfolioScreen(state: GoldArbUiState, onConvert: (String) -> Unit, onReset: () -> Unit, padding: PaddingValues) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(padding),
+        contentPadding = PaddingValues(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { ScreenHeader("دارایی پلتفرم‌ها", "ذخیره خودکار روی همین دستگاه") }
+        item {
+            NoticeCard(Icons.Rounded.AccountBalanceWallet, "شروع با ۵۰ میلیون تومان برای هر پلتفرم", "پس از ثبت خرید، همان پلتفرم دارنده طلا محسوب می‌شود و فقط در سمت فروش قابل استفاده است.", Mint400)
+        }
+        items(state.quotes, key = { "position-${it.venueId}" }) { quote ->
+            PositionCard(quote, state.positions[quote.venueId], onConvert)
+        }
+        item {
+            Surface(
+                shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onReset),
+            ) { Text("بازنشانی همه به ۵۰ میلیون تومان", modifier = Modifier.padding(15.dp), textAlign = TextAlign.Center, color = Coral400) }
+        }
+    }
+}
+
+@Composable
+private fun PositionCard(quote: MarketQuote, position: VenuePosition?, onConvert: (String) -> Unit) {
+    if (position == null) return
+    val holdingGold = position.goldBalanceGram > 0
+    val canConvert = if (holdingGold) quote.bidTomanPerGram != null else quote.askTomanPerGram != null
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp), border = CardDefaults.outlinedCardBorder()) {
+        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(quote.venueName, style = MaterialTheme.typography.titleMedium)
+                StatusPill(if (holdingGold) "دارنده طلا" else "دارنده تومان", if (holdingGold) Gold400 else Mint400)
+            }
+            Text("تومان: ${formatToman(position.tomanBalance)} · طلا: ${String.format(Locale.US, "%.4f", position.goldBalanceGram).replace('.', '٫')} گرم", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (canConvert) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth().clickable(enabled = canConvert) { onConvert(quote.venueId) },
+            ) {
+                Text(if (holdingGold) "ثبت فروش کل طلا" else "ثبت خرید با کل موجودی", modifier = Modifier.padding(12.dp), textAlign = TextAlign.Center, color = if (canConvert) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -541,6 +603,8 @@ private fun SettingsScreen(
     onBiometricChanged: (Boolean) -> Unit,
     onThemeModeChanged: (AppThemeMode) -> Unit,
     onVisualStyleChanged: (AppVisualStyle) -> Unit,
+    minimumProfitRate: Double,
+    onMinimumProfitPercentChanged: (Double) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding),
@@ -550,12 +614,22 @@ private fun SettingsScreen(
         item { ScreenHeader("تنظیمات زرگَرد", "امنیت و ظاهر") }
         item {
             ToggleSettingRow(
-                icon = Icons.Rounded.Fingerprint,
+                icon = if (biometricEnabled) Icons.Rounded.Fingerprint else Icons.Rounded.LockOpen,
                 title = "قفل اثر انگشت",
                 value = if (biometricAvailable) "قفل اپ پس از خروج" else "در این دستگاه در دسترس نیست",
                 checked = biometricEnabled,
                 enabled = biometricAvailable,
                 onCheckedChange = onBiometricChanged,
+            )
+        }
+        item { SectionTitle("استراتژی", "درصد از قیمت کمتر دو سمت") }
+        item {
+            ChoiceSettingRow(
+                icon = Icons.Rounded.Analytics,
+                title = "حداقل سود پویا",
+                choices = listOf("۲٪" to 2.0, "۵٪" to 5.0, "۱۰٪" to 10.0),
+                selected = minimumProfitRate * 100,
+                onSelected = onMinimumProfitPercentChanged,
             )
         }
         item { SectionTitle("ظاهر برنامه", "انتخاب روشنایی و رنگ‌بندی") }
@@ -577,7 +651,7 @@ private fun SettingsScreen(
                 onSelected = onVisualStyleChanged,
             )
         }
-        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۹٫۲") }
+        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۰٫۰") }
         item {
             NoticeCard(
                 Icons.Rounded.Security,
@@ -634,7 +708,12 @@ private fun ToggleSettingRow(
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(18.dp)).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Box(
+            modifier = Modifier.size(38.dp).clip(CircleShape).background(if (checked) Mint400.copy(alpha = 0.18f) else Gold400.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = if (checked) "$title روشن" else "$title خاموش", tint = if (checked) Mint400 else Gold400, modifier = Modifier.size(23.dp))
+        }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)

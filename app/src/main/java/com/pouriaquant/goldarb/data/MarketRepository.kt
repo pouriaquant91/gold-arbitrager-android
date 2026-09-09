@@ -25,8 +25,10 @@ class PublicFeedMarketRepository : MarketRepository {
         val serverResult = runCatching(::fetchServerRuns)
         val serverRuns = serverResult.getOrDefault(emptyList())
 
+        val byId = quotes.associateBy { it.venueId }
+        val completeCatalog = MarketCatalog.entries.map { byId[it.id] ?: MarketCatalog.unavailable(it) }
         return MarketSnapshot(
-            quotes = quotes.sortedWith(compareBy({ it.quality.ordinal }, { it.venueName })),
+            quotes = completeCatalog.sortedWith(compareBy({ it.quality.ordinal }, { it.venueName })),
             receivedAt = Instant.now().toString(),
             failedVenueNames = failed,
             serverRuns = serverRuns,
@@ -48,7 +50,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.9.2")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.10.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -65,7 +67,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.9.2")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.10.0")
             instanceFollowRedirects = true
         }
         return try {

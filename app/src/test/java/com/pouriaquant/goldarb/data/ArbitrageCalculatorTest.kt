@@ -10,13 +10,18 @@ class ArbitrageCalculatorTest {
         val buy = quote("buy", ask = 22_000_000.0, bid = 21_900_000.0)
         val sell = quote("sell", ask = 23_200_000.0, bid = 23_000_000.0)
 
-        val result = ArbitrageCalculator.evaluate(listOf(buy, sell), quantityGram = 1.0).first()
+        val positions = mapOf(
+            "buy" to VenuePosition("buy", 50_000_000.0, 0.0, "2026-09-09T00:00:00Z"),
+            "sell" to VenuePosition("sell", 0.0, 1.0, "2026-09-09T00:00:00Z"),
+        )
+        val result = ArbitrageCalculator.evaluate(listOf(buy, sell), quantityGram = 1.0, positions = positions).first()
 
         assertEquals(1_000_000.0, result.grossSpreadToman, 0.001)
         assertEquals(45_000.0, result.slippageReserveToman, 0.001)
         assertEquals(6_750.0, result.rebalanceReserveToman, 0.001)
         assertEquals(928_250.0, result.netProfitToman, 0.001)
-        assertTrue(result.crossesSafetyThreshold)
+        assertEquals(1_100_000.0, result.minimumRequiredProfitToman, 0.001)
+        assertTrue(!result.crossesSafetyThreshold)
     }
 
     @Test

@@ -31,7 +31,16 @@ data class CostPolicy(
     val sellSlippageRate: Double = 0.001,
     val rebalanceRate: Double = 0.0003,
     val settlementToman: Double = 20_000.0,
-    val minimumNetProfitToman: Double = 100_000.0,
+    val minimumNetProfitRate: Double = 0.05,
+)
+
+const val DEFAULT_VENUE_TOMAN_BALANCE = 50_000_000.0
+
+data class VenuePosition(
+    val venueId: String,
+    val tomanBalance: Double = DEFAULT_VENUE_TOMAN_BALANCE,
+    val goldBalanceGram: Double = 0.0,
+    val updatedAt: String,
 )
 
 data class Opportunity(
@@ -45,9 +54,11 @@ data class Opportunity(
     val rebalanceReserveToman: Double,
     val settlementReserveToman: Double,
     val netProfitToman: Double,
+    val minimumRequiredProfitToman: Double,
+    val inventoryReady: Boolean,
 ) {
     val crossesSafetyThreshold: Boolean
-        get() = netProfitToman >= 100_000.0
+        get() = inventoryReady && netProfitToman >= minimumRequiredProfitToman
 }
 
 data class MarketSnapshot(
@@ -79,6 +90,7 @@ object ArbitrageCalculator {
         quotes: List<MarketQuote>,
         quantityGram: Double,
         policy: CostPolicy = CostPolicy(),
+        positions: Map<String, VenuePosition> = emptyMap(),
     ): List<Opportunity> {
         if (!quantityGram.isFinite() || quantityGram <= 0) return emptyList()
         val comparable = quotes.filter {
@@ -100,6 +112,11 @@ object ArbitrageCalculator {
                 val slippage = grossBuy * policy.buySlippageRate + grossSell * policy.sellSlippageRate
                 val rebalance = ((ask + bid) / 2) * quantityGram * policy.rebalanceRate
                 val grossSpread = grossSell - grossBuy
+                val minimumRequiredProfit = minOf(ask, bid) * quantityGram * policy.minimumNetProfitRate
+                val buyPosition = positions[buy.venueId]
+                val sellPosition = positions[sell.venueId]
+                val inventoryReady = buyPosition != null && sellPosition != null &&
+                    buyPosition.tomanBalance >= grossBuy && sellPosition.goldBalanceGram >= quantityGram
                 Opportunity(
                     buyVenue = buy,
                     sellVenue = sell,
@@ -111,6 +128,8 @@ object ArbitrageCalculator {
                     rebalanceReserveToman = rebalance,
                     settlementReserveToman = policy.settlementToman,
                     netProfitToman = grossSpread - commission - commissionVat - slippage - rebalance - policy.settlementToman,
+                    minimumRequiredProfitToman = minimumRequiredProfit,
+                    inventoryReady = inventoryReady,
                 )
             }
         }.sortedByDescending { it.netProfitToman }
