@@ -518,7 +518,7 @@ private fun PortfolioScreen(state: GoldArbUiState, onConvert: (String) -> Unit, 
         contentPadding = PaddingValues(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { ScreenHeader("دارایی پلتفرم‌ها", "ذخیره خودکار روی همین دستگاه") }
+        item { ScreenHeader("دارایی پلتفرم‌ها", "همگام با حساب آزمایشی سرور") }
         item {
             NoticeCard(Icons.Rounded.AccountBalanceWallet, "شروع با ۵۰ میلیون تومان برای هر پلتفرم", "پس از ثبت خرید، همان پلتفرم دارنده طلا محسوب می‌شود و فقط در سمت فروش قابل استفاده است.", Mint400)
         }
@@ -529,7 +529,7 @@ private fun PortfolioScreen(state: GoldArbUiState, onConvert: (String) -> Unit, 
             Surface(
                 shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onReset),
-            ) { Text("بازنشانی همه به ۵۰ میلیون تومان", modifier = Modifier.padding(15.dp), textAlign = TextAlign.Center, color = Coral400) }
+            ) { Text("بازنشانی حساب آزمایشی روی سرور", modifier = Modifier.padding(15.dp), textAlign = TextAlign.Center, color = Coral400) }
         }
     }
 }
@@ -622,7 +622,7 @@ private fun SettingsScreen(
                 onCheckedChange = onBiometricChanged,
             )
         }
-        item { SectionTitle("استراتژی", "درصد از قیمت کمتر دو سمت") }
+        item { SectionTitle("استراتژی سرور", "درصد از قیمت کمتر دو سمت؛ مشترک با PWA") }
         item {
             ChoiceSettingRow(
                 icon = Icons.Rounded.Analytics,

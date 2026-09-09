@@ -7,6 +7,16 @@ import java.time.Instant
 
 interface MarketRepository {
     fun refresh(): MarketSnapshot
+    fun updateMinimumProfitRate(rate: Double): ServerStrategyState
+    fun recordTrade(
+        id: String,
+        venueId: String,
+        side: String,
+        quantityGram: Double,
+        totalToman: Double,
+        occurredAt: String,
+    ): ServerStrategyState
+    fun resetStrategyState(): ServerStrategyState
 }
 
 class PublicFeedMarketRepository : MarketRepository {
@@ -24,6 +34,8 @@ class PublicFeedMarketRepository : MarketRepository {
         load("بازارطلا", ::fetchBazaretala)?.let(quotes::add) ?: failed.add("بازارطلا")
         val serverResult = runCatching(::fetchServerRuns)
         val serverRuns = serverResult.getOrDefault(emptyList())
+        val strategyResult = runCatching(::fetchStrategyState)
+        val strategyState = strategyResult.getOrNull()
 
         val byId = quotes.associateBy { it.venueId }
         val completeCatalog = MarketCatalog.entries.map { byId[it.id] ?: MarketCatalog.unavailable(it) }
@@ -32,8 +44,9 @@ class PublicFeedMarketRepository : MarketRepository {
             receivedAt = Instant.now().toString(),
             failedVenueNames = failed,
             serverRuns = serverRuns,
-            serverConnected = serverResult.isSuccess,
+            serverConnected = serverResult.isSuccess && strategyResult.isSuccess,
             serverUpdatedAt = serverRuns.maxByOrNull { it.updatedAt }?.updatedAt,
+            strategyState = strategyState,
         )
     }
 
@@ -50,11 +63,30 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.10.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.11.0")
             instanceFollowRedirects = true
         }
         return try {
             require(connection.responseCode in 200..299) { "upstream-${connection.responseCode}" }
+            connection.inputStream.bufferedReader().use { JSONObject(it.readText()) }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun postJson(url: String, payload: JSONObject): JSONObject {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            connectTimeout = 8_000
+            readTimeout = 8_000
+            doOutput = true
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.11.0")
+        }
+        return try {
+            connection.outputStream.bufferedWriter().use { it.write(payload.toString()) }
+            require(connection.responseCode in 200..299) { "server-${connection.responseCode}" }
             connection.inputStream.bufferedReader().use { JSONObject(it.readText()) }
         } finally {
             connection.disconnect()
@@ -67,7 +99,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.10.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.11.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -253,6 +285,75 @@ class PublicFeedMarketRepository : MarketRepository {
                 updatedAt = row.getString("updated_at"),
             )
         }
+    }
+
+    private fun parseStrategyState(payload: JSONObject): ServerStrategyState {
+        require(payload.getInt("schemaVersion") == 1 && payload.getString("storage") == "server")
+        val rows = payload.getJSONObject("positions")
+        val positions = rows.keys().asSequence().associateWith { venueId ->
+            val row = rows.getJSONObject(venueId)
+            VenuePosition(
+                venueId = row.getString("venueId"),
+                tomanBalance = row.getDouble("tomanBalance"),
+                goldBalanceGram = row.getDouble("goldBalanceGram"),
+                updatedAt = row.getString("updatedAt"),
+            )
+        }
+        return ServerStrategyState(
+            schemaVersion = 1,
+            storage = "server",
+            minimumProfitRate = payload.getDouble("minimumProfitRate"),
+            revision = payload.getLong("revision"),
+            updatedAt = payload.optString("updatedAt").takeIf { it.isNotBlank() && it != "null" },
+            positions = positions,
+        )
+    }
+
+    private fun fetchStrategyState(): ServerStrategyState = parseStrategyState(
+        getJson("$SERVER_BASE_URL/api/strategy-state"),
+    )
+
+    override fun updateMinimumProfitRate(rate: Double): ServerStrategyState = parseStrategyState(
+        postJson(
+            "$SERVER_BASE_URL/api/strategy-state",
+            JSONObject().put("action", "settings").put("minimumProfitRate", rate),
+        ),
+    )
+
+    override fun recordTrade(
+        id: String,
+        venueId: String,
+        side: String,
+        quantityGram: Double,
+        totalToman: Double,
+        occurredAt: String,
+    ): ServerStrategyState = parseStrategyState(
+        postJson(
+            "$SERVER_BASE_URL/api/strategy-state",
+            JSONObject().put("action", "trade").put(
+                "trade",
+                JSONObject()
+                    .put("id", id)
+                    .put("venueId", venueId)
+                    .put("side", side)
+                    .put("quantityGram", quantityGram)
+                    .put("totalToman", totalToman)
+                    .put("occurredAt", occurredAt),
+            ),
+        ),
+    )
+
+    override fun resetStrategyState(): ServerStrategyState = parseStrategyState(
+        postJson(
+            "$SERVER_BASE_URL/api/strategy-state",
+            JSONObject()
+                .put("action", "reset")
+                .put("confirmation", "RESET_SHARED_PAPER_STATE"),
+        ),
+    )
+
+    private companion object {
+        const val SERVER_BASE_URL = "https://zargard-pwa.ihamedcs.chatgpt.site"
     }
 
 }

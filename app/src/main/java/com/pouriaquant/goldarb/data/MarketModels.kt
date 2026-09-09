@@ -68,6 +68,16 @@ data class MarketSnapshot(
     val serverRuns: List<ServerOpportunityRun> = emptyList(),
     val serverConnected: Boolean = false,
     val serverUpdatedAt: String? = null,
+    val strategyState: ServerStrategyState? = null,
+)
+
+data class ServerStrategyState(
+    val schemaVersion: Int,
+    val storage: String,
+    val minimumProfitRate: Double,
+    val revision: Long,
+    val updatedAt: String?,
+    val positions: Map<String, VenuePosition>,
 )
 
 data class ServerOpportunityRun(

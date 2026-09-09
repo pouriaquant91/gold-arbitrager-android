@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 3,
-  "updatedAt": "2026-09-09T18:00:00Z",
+  "schemaVersion": 4,
+  "updatedAt": "2026-09-09T21:00:00Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitRate": 0.05,
@@ -8,6 +8,9 @@
     "minimumNetProfitScope": "per-order",
     "initialTomanBalancePerVenue": 50000000,
     "inventoryStateVersion": 1,
+    "stateStorage": "server-d1",
+    "stateEndpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/strategy-state",
+    "stateWorkspace": "shared-paper-testing",
     "screeningQuantitiesGram": [0.2, 1, 5, 10],
     "feeVatRate": 0.1,
     "mode": "paper-monitoring",
@@ -37,8 +40,8 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.10.0",
-    "pwaVersion": "0.4.0"
+    "androidVersion": "0.11.0",
+    "pwaVersion": "0.5.0"
   },
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",
