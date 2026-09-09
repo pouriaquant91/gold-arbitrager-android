@@ -651,7 +651,7 @@ private fun SettingsScreen(
                 onSelected = onVisualStyleChanged,
             )
         }
-        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۰٫۰") }
+        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۱٫۰") }
         item {
             NoticeCard(
                 Icons.Rounded.Security,
