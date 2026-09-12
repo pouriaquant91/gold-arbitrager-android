@@ -8,23 +8,26 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import com.pouriaquant.goldarb.security.AppPreferences
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.GoldArbApp
 import com.pouriaquant.goldarb.ui.LockScreen
-import com.pouriaquant.goldarb.ui.theme.GoldArbTheme
+import com.pouriaquant.goldarb.ui.theme.RasadTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     private val preferences by lazy { AppPreferences(applicationContext) }
     private var unlocked by mutableStateOf(true)
     private var biometricEnabled by mutableStateOf(false)
-    private var themeMode by mutableStateOf(AppThemeMode.DARK)
-    private var visualStyle by mutableStateOf(AppVisualStyle.OBSIDIAN_CHAMPAGNE)
+    private var themeMode by mutableStateOf(AppThemeMode.SYSTEM)
+    private var visualStyle by mutableStateOf(AppVisualStyle.GRAPHITE)
     private var authenticationRunning = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,8 +35,12 @@ class MainActivity : FragmentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         biometricEnabled = preferences.biometricLockEnabled && biometricAvailable()
         if (preferences.biometricLockEnabled && !biometricEnabled) preferences.biometricLockEnabled = false
-        themeMode = preferences.themeMode
-        visualStyle = preferences.visualStyle
+        lifecycleScope.launch {
+            preferences.themeModeFlow.collect { savedMode -> themeMode = savedMode }
+        }
+        lifecycleScope.launch {
+            preferences.visualStyleFlow.collect { savedStyle -> visualStyle = savedStyle }
+        }
         unlocked = !biometricEnabled
         setContent {
             val darkTheme = when (themeMode) {
@@ -41,7 +48,13 @@ class MainActivity : FragmentActivity() {
                 AppThemeMode.LIGHT -> false
                 AppThemeMode.DARK -> true
             }
-            GoldArbTheme(darkTheme = darkTheme, visualStyle = visualStyle) {
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !darkTheme
+                    isAppearanceLightNavigationBars = !darkTheme
+                }
+            }
+            RasadTheme(darkTheme = darkTheme, visualStyle = visualStyle) {
                 if (biometricEnabled && !unlocked) {
                     LockScreen(biometricAvailable = biometricAvailable(), onUnlock = ::authenticate)
                 } else {
@@ -52,12 +65,12 @@ class MainActivity : FragmentActivity() {
                         visualStyle = visualStyle,
                         onBiometricChanged = ::requestBiometricSetting,
                         onThemeModeChanged = { mode ->
-                            preferences.themeMode = mode
                             themeMode = mode
+                            lifecycleScope.launch { preferences.setThemeMode(mode) }
                         },
                         onVisualStyleChanged = { style ->
-                            preferences.visualStyle = style
                             visualStyle = style
+                            lifecycleScope.launch { preferences.setVisualStyle(style) }
                         },
                     )
                 }
@@ -110,7 +123,7 @@ class MainActivity : FragmentActivity() {
             },
         )
         val builder = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("ورود امن به آربیتو")
+            .setTitle("ورود امن به رصد")
             .setSubtitle("با اثر انگشت، چهره یا قفل دستگاه وارد شوید")
             .setAllowedAuthenticators(authenticators())
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) builder.setNegativeButtonText("انصراف")

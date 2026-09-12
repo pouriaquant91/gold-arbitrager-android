@@ -4,6 +4,7 @@ package com.pouriaquant.goldarb.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,12 +72,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pouriaquant.goldarb.R
 import com.pouriaquant.goldarb.data.AssetPosition
 import com.pouriaquant.goldarb.data.AssetSignal
 import com.pouriaquant.goldarb.data.AssetTrade
@@ -87,9 +90,9 @@ import java.text.NumberFormat
 import java.util.Locale
 
 private val Gold = Color(0xFFE9B949)
-private val Silver = Color(0xFFC9D2DC)
-private val Copper = Color(0xFFD47A45)
-private val Tether = Color(0xFF35C89F)
+private val Silver = Color(0xFFAEBBC8)
+private val Copper = Color(0xFFC96F3B)
+private val Tether = Color(0xFF26A17B)
 private val Positive = Color(0xFF48D7A2)
 private val Negative = Color(0xFFFF7D77)
 private val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("fa-IR"))
@@ -136,8 +139,8 @@ fun GoldArbApp(
             drawerContent = {
                 ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surface) {
                     Row(Modifier.fillMaxWidth().padding(22.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        ArbitoMark()
-                        Column { Text("آربیتو", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black); Text("Arbito Signal Lab", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }
+                        RasadMark()
+                        Column { Text("رصد", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black); Text("RASAD", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, letterSpacing = 1.5.sp) }
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = { scope.launch { drawerState.close() } }) { Icon(Icons.Rounded.Close, "بستن منو") }
                     }
@@ -162,7 +165,7 @@ fun GoldArbApp(
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { ArbitoMark(30); Text("آربیتو", fontWeight = FontWeight.Black) } },
+                        title = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { RasadMark(30); Text("رصد", fontWeight = FontWeight.Black) } },
                         navigationIcon = { IconButton(onClick = { scope.launch { drawerState.open() } }) { Icon(Icons.Rounded.Menu, "باز کردن منو") } },
                         actions = {
                             StatusPill(state.serverConnected)
@@ -241,17 +244,82 @@ private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellV
 @Composable private fun EmptyContent(page:AssetPage){Column(Modifier.fillMaxWidth().padding(vertical=34.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)){Icon(Icons.Rounded.CloudOff,null,tint=page.color,modifier=Modifier.size(38.dp));Text(if(page==AssetPage.SILVER||page==AssetPage.COPPER)"خوراک دوطرفه معتبر لازم است" else "فرصت قابل‌قبولی ثبت نشده",fontWeight=FontWeight.Bold);Text("تا اتصال منبع معتبر، قیمت یا سود ساختگی نمایش داده نمی‌شود.",textAlign=TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=22.sp)}}
 @Composable private fun EmptyCard(text:String){Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Text(text,Modifier.fillMaxWidth().padding(25.dp),textAlign=TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
 
-@Composable private fun SettingsPage(padding:PaddingValues,biometricAvailable:Boolean,biometricEnabled:Boolean,themeMode:AppThemeMode,visualStyle:AppVisualStyle,onBiometricChanged:(Boolean)->Unit,onThemeModeChanged:(AppThemeMode)->Unit,onVisualStyleChanged:(AppVisualStyle)->Unit){LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(top=padding.calculateTopPadding()+16.dp,bottom=30.dp,start=16.dp,end=16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{Text("تنظیمات",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black)};item{SettingSwitch(Icons.Rounded.Fingerprint,"قفل اثر انگشت",if(biometricAvailable)"قفل محلی برنامه" else "در این دستگاه در دسترس نیست",biometricEnabled,biometricAvailable,onBiometricChanged)};item{Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){Icon(Icons.Rounded.DarkMode,null);Text("حالت نمایش",fontWeight=FontWeight.Bold)};AppThemeMode.entries.forEach{mode->Surface(modifier=Modifier.fillMaxWidth().clickable{onThemeModeChanged(mode)},shape=RoundedCornerShape(12.dp),color=if(mode==themeMode)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant){Text(mode.name,Modifier.padding(13.dp))}}}}};item{Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){Icon(Icons.Rounded.Palette,null);Text("رنگ پایه",fontWeight=FontWeight.Bold)};AppVisualStyle.entries.forEach{style->Surface(modifier=Modifier.fillMaxWidth().clickable{onVisualStyleChanged(style)},shape=RoundedCornerShape(12.dp),color=if(style==visualStyle)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant){Text(style.name,Modifier.padding(13.dp))}}}}}}}
+@Composable
+private fun SettingsPage(
+    padding: PaddingValues,
+    biometricAvailable: Boolean,
+    biometricEnabled: Boolean,
+    themeMode: AppThemeMode,
+    visualStyle: AppVisualStyle,
+    onBiometricChanged: (Boolean) -> Unit,
+    onThemeModeChanged: (AppThemeMode) -> Unit,
+    onVisualStyleChanged: (AppVisualStyle) -> Unit,
+) {
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = padding.calculateTopPadding() + 16.dp, bottom = 30.dp, start = 16.dp, end = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { Text("تنظیمات", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black) }
+        item { SettingSwitch(Icons.Rounded.Fingerprint, "قفل اثر انگشت", if (biometricAvailable) "قفل محلی برنامه" else "در این دستگاه در دسترس نیست", biometricEnabled, biometricAvailable, onBiometricChanged) }
+        item {
+            SettingsGroup(Icons.Rounded.DarkMode, "حالت نمایش", "روشنایی برنامه را مستقل یا هماهنگ با دستگاه انتخاب کنید.") {
+                AppThemeMode.entries.forEach { mode ->
+                    ChoiceRow(mode.displayName(), mode.description(), mode == themeMode) { onThemeModeChanged(mode) }
+                }
+            }
+        }
+        item {
+            SettingsGroup(Icons.Rounded.Palette, "بستهٔ ظاهری", "رنگ هر دارایی در تمام بسته‌ها ثابت می‌ماند.") {
+                AppVisualStyle.entries.forEach { style ->
+                    ChoiceRow(style.displayName(), style.description(), style == visualStyle) { onVisualStyleChanged(style) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsGroup(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, content: @Composable () -> Unit) {
+    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null)
+                Column { Text(title, fontWeight = FontWeight.Bold); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun ChoiceRow(title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.Bold); Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            if (selected) Icon(Icons.Rounded.CheckCircle, "انتخاب‌شده", tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+private fun AppThemeMode.displayName() = when (this) { AppThemeMode.SYSTEM -> "سیستم"; AppThemeMode.LIGHT -> "روشن"; AppThemeMode.DARK -> "تیره" }
+private fun AppThemeMode.description() = when (this) { AppThemeMode.SYSTEM -> "هماهنگ با تنظیم دستگاه"; AppThemeMode.LIGHT -> "پس‌زمینه روشن و خوانا"; AppThemeMode.DARK -> "مناسب محیط کم‌نور" }
+private fun AppVisualStyle.displayName() = when (this) { AppVisualStyle.GRAPHITE -> "گرافیت"; AppVisualStyle.AURORA -> "شفق"; AppVisualStyle.PAPER -> "کاغذ" }
+private fun AppVisualStyle.description() = when (this) { AppVisualStyle.GRAPHITE -> "خنثی و حرفه‌ای"; AppVisualStyle.AURORA -> "مدرن با آبی و فیروزه‌ای"; AppVisualStyle.PAPER -> "گرم و پُرکنتراست" }
 @Composable private fun SettingSwitch(icon:androidx.compose.ui.graphics.vector.ImageVector,title:String,subtitle:String,checked:Boolean,enabled:Boolean,onChecked:(Boolean)->Unit){Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Row(Modifier.fillMaxWidth().padding(18.dp),verticalAlignment=Alignment.CenterVertically){Icon(icon,null);Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(title,fontWeight=FontWeight.Bold);Text(subtitle,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked,onCheckedChange=onChecked,enabled=enabled)}}}
 
 @Composable private fun StatusPill(connected:Boolean){Surface(shape=RoundedCornerShape(999.dp),color=(if(connected)Positive else Negative).copy(alpha=.12f)){Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){Box(Modifier.size(7.dp).clip(CircleShape).background(if(connected)Positive else Negative));Text(if(connected)"سرور" else "قطع",fontSize=11.sp,color=if(connected)Positive else Negative)}}}
-@Composable private fun ArbitoMark(size:Int=42){Box(Modifier.size(size.dp).clip(RoundedCornerShape((size/3).dp)).background(Brush.linearGradient(listOf(Gold,Silver,Copper,Tether))),contentAlignment=Alignment.Center){Text("A",color=Color(0xFF080B12),fontWeight=FontWeight.Black,fontSize=(size/2).sp)}}
+@Composable private fun RasadMark(size:Int=42){Image(painter=painterResource(R.drawable.ic_rasad_mark),contentDescription="نشان رصد",modifier=Modifier.size(size.dp))}
 @Composable private fun ElementBadge(symbol:String,color:Color,size:Int){Box(Modifier.size(size.dp).clip(RoundedCornerShape((size/3).dp)).background(color.copy(alpha=.9f)),contentAlignment=Alignment.Center){Text(symbol,color=Color(0xFF11141B),fontWeight=FontWeight.Black)}}
 private fun money(value:Double)="${formatter.format(value.toLong())} تومان"
 
 @Composable
 fun LockScreen(biometricAvailable: Boolean, onUnlock: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Tether.copy(alpha=.22f), Color(0xFF080B12)),radius=900f)).padding(28.dp), contentAlignment=Alignment.Center) {
-        Card(shape=RoundedCornerShape(28.dp),colors=CardDefaults.cardColors(containerColor=Color(0xFF111723))) { Column(Modifier.padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp)) { ArbitoMark(72); Text("آربیتو قفل است",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black); Text(if(biometricAvailable)"برای مشاهده گزارش سرور قفل دستگاه را باز کنید." else "قفل امن در این دستگاه در دسترس نیست.",textAlign=TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant); Surface(modifier=Modifier.fillMaxWidth().clickable(enabled=biometricAvailable,onClick=onUnlock),shape=RoundedCornerShape(16.dp),color=if(biometricAvailable)Tether else Color.Gray){Row(Modifier.padding(15.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically){Icon(if(biometricAvailable)Icons.Rounded.Fingerprint else Icons.Rounded.Lock,null,tint=Color(0xFF08130F));Spacer(Modifier.width(8.dp));Text("باز کردن",color=Color(0xFF08130F),fontWeight=FontWeight.Bold)}} } }
+    Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.72f), MaterialTheme.colorScheme.background),radius=900f)).padding(28.dp), contentAlignment=Alignment.Center) {
+        Card(shape=RoundedCornerShape(28.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(28.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp)) { RasadMark(72); Text("رصد قفل است",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Black); Text(if(biometricAvailable)"برای مشاهده گزارش سرور قفل دستگاه را باز کنید." else "قفل امن در این دستگاه در دسترس نیست.",textAlign=TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant); Surface(modifier=Modifier.fillMaxWidth().clickable(enabled=biometricAvailable,onClick=onUnlock),shape=RoundedCornerShape(16.dp),color=if(biometricAvailable)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant){Row(Modifier.padding(15.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically){Icon(if(biometricAvailable)Icons.Rounded.Fingerprint else Icons.Rounded.Lock,null,tint=if(biometricAvailable)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.width(8.dp));Text("باز کردن",color=if(biometricAvailable)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,fontWeight=FontWeight.Bold)}} } }
     }
 }

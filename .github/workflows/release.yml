@@ -37,12 +37,12 @@ jobs:
       - name: Test and build installable beta APK
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
       - name: Prepare release asset
-        run: cp app/build/outputs/apk/debug/app-debug.apk "Arbito-android-${GITHUB_REF_NAME#android-v}-beta.apk"
+        run: cp app/build/outputs/apk/debug/app-debug.apk "RASAD-android-${GITHUB_REF_NAME#android-v}-beta.apk"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
-          "Arbito-android-${GITHUB_REF_NAME#android-v}-beta.apk"
-          --title "آربیتو ${GITHUB_REF_NAME} Beta"
-          --notes "نسخه آزمایشی آربیتو برای مشاهده سیگنال و معاملات فرضی طلا، نقره، مس و تتر؛ دارای منوی همبرگری، صفحات مستقل بازار، تم تیره/روشن و قفل اثر انگشت. برنامه سفارش واقعی ارسال نمی‌کند."
+          "RASAD-android-${GITHUB_REF_NAME#android-v}-beta.apk"
+          --title "رصد ${GITHUB_REF_NAME} Beta"
+          --notes "نسخه آزمایشی رصد برای مشاهده سیگنال و معاملات فرضی طلا، نقره، مس و تتر؛ دارای منوی همبرگری، صفحات مستقل بازار، حالت سیستم/روشن/تیره، بسته‌های گرافیت/شفق/کاغذ و قفل اثر انگشت. برنامه سفارش واقعی ارسال نمی‌کند."

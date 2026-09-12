@@ -69,7 +69,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "Arbito-Android/0.15.2")
+            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -88,7 +88,7 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "Arbito-Android/0.15.2")
+            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
@@ -106,7 +106,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "Arbito-Android/0.15.2")
+            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -445,7 +445,7 @@ class PublicFeedMarketRepository : MarketRepository {
             requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("User-Agent", "Arbito-Android/0.15.2")
+            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
         }
         return try {
             if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {

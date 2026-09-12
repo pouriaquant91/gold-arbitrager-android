@@ -1,7 +1,7 @@
 {
   "schemaVersion": 5,
   "updatedAt": "2026-09-12T12:48:00Z",
-  "productName": "Arbito",
+  "productName": "RASAD",
   "strategy": {
     "minimumNetProfitRate": 0.005,
     "minimumNetProfitBasis": "lower-leg-notional",
@@ -42,8 +42,8 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.15.2",
-    "pwaVersion": "0.9.0"
+    "androidVersion": "0.16.0",
+    "pwaVersion": "1.0.0"
   },
   "multiAsset": {
     "markets": ["gold", "silver", "copper", "usdt"],
@@ -54,6 +54,14 @@
     "usdtInitialAssetPerVenue": 200,
     "usdtUnit": "USDT",
     "endpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/market-signals"
+  },
+  "retention": {
+    "rejectedRawDays": 7,
+    "acceptedSignals": "permanent",
+    "paperTrades": "permanent",
+    "heartbeats": "latest-only",
+    "positions": "latest-only",
+    "dailyAggregates": "long-term"
   },
   "identity": {
     "provider": "zargard-server",
