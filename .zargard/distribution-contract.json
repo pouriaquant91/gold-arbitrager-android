@@ -1,6 +1,6 @@
 {
   "schemaVersion": 5,
-  "updatedAt": "2026-09-09T21:00:00Z",
+  "updatedAt": "2026-09-12T11:30:00Z",
   "productName": "ZarGard",
   "strategy": {
     "minimumNetProfitRate": 0.005,
@@ -42,8 +42,8 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.13.0",
-    "pwaVersion": "0.7.0"
+    "androidVersion": "0.14.0",
+    "pwaVersion": "0.8.0"
   },
   "identity": {
     "provider": "zargard-server",

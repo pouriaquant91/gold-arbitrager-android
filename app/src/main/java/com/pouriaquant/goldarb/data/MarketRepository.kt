@@ -32,6 +32,8 @@ class PublicFeedMarketRepository : MarketRepository {
         val serverRuns = serverResult.getOrDefault(emptyList())
         val strategyResult = runCatching(::fetchStrategyState)
         val strategyState = strategyResult.getOrNull()
+        val calculationsResult = runCatching(::fetchStrategyCalculations)
+        val calculationRuns = calculationsResult.getOrDefault(emptyList())
 
         val byId = quotes.associateBy { it.venueId }
         val completeCatalog = MarketCatalog.entries.map { byId[it.id] ?: MarketCatalog.unavailable(it) }
@@ -40,9 +42,11 @@ class PublicFeedMarketRepository : MarketRepository {
             receivedAt = Instant.now().toString(),
             failedVenueNames = failed,
             serverRuns = serverRuns,
-            serverConnected = serverResult.isSuccess && strategyResult.isSuccess,
-            serverUpdatedAt = serverRuns.maxByOrNull { it.updatedAt }?.updatedAt,
+            serverConnected = serverResult.isSuccess && strategyResult.isSuccess && calculationsResult.isSuccess,
+            serverUpdatedAt = calculationRuns.maxByOrNull { it.sampledAt }?.sampledAt
+                ?: serverRuns.maxByOrNull { it.updatedAt }?.updatedAt,
             strategyState = strategyState,
+            calculationRuns = calculationRuns,
         )
     }
 
@@ -59,7 +63,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -78,7 +82,7 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
@@ -96,7 +100,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -284,6 +288,27 @@ class PublicFeedMarketRepository : MarketRepository {
         }
     }
 
+    private fun fetchStrategyCalculations(): List<StrategyCalculationRun> {
+        val rows = getJson("$SERVER_BASE_URL/api/strategy-calculations").getJSONArray("runs")
+        return (0 until rows.length()).map { index ->
+            val row = rows.getJSONObject(index)
+            StrategyCalculationRun(
+                id = row.getString("id"),
+                routeKey = row.getString("route_key"),
+                buyVenueId = row.getString("buy_venue_id"),
+                sellVenueId = row.getString("sell_venue_id"),
+                decision = row.getString("decision"),
+                quantityGram = row.getDouble("quantity_gram"),
+                buyPriceToman = row.getDouble("buy_price_toman"),
+                sellPriceToman = row.getDouble("sell_price_toman"),
+                netProfitToman = row.getDouble("net_profit_toman"),
+                minimumRequiredProfitToman = row.getDouble("minimum_required_profit_toman"),
+                sampledAt = row.getString("sampled_at"),
+                executionStatus = row.optString("execution_status", "calculated"),
+            )
+        }
+    }
+
     private fun parseStrategyState(payload: JSONObject): ServerStrategyState {
         require(payload.getInt("schemaVersion") == 2 && payload.getString("storage") == "server")
         val rows = payload.getJSONObject("positions")
@@ -303,6 +328,19 @@ class PublicFeedMarketRepository : MarketRepository {
             )
         }
         val portfolioRow = payload.getJSONObject("portfolio")
+        val tradeRows = payload.optJSONArray("trades")
+        val trades = if (tradeRows == null) emptyList() else (0 until tradeRows.length()).map { index ->
+            val row = tradeRows.getJSONObject(index)
+            InventoryTrade(
+                id = row.getString("id"),
+                venueId = row.getString("venueId"),
+                side = row.getString("side"),
+                quantityGram = row.getDouble("quantityGram"),
+                totalToman = row.getDouble("totalToman"),
+                routeKey = row.optString("routeKey").takeIf { it.isNotBlank() && it != "null" },
+                occurredAt = row.getString("occurredAt"),
+            )
+        }
         return ServerStrategyState(
             schemaVersion = 2,
             storage = "server",
@@ -316,6 +354,7 @@ class PublicFeedMarketRepository : MarketRepository {
                 profitLossToman = portfolioRow.getDouble("profitLossToman"),
                 returnRate = portfolioRow.getDouble("returnRate"),
             ),
+            trades = trades,
         )
     }
 
@@ -346,7 +385,7 @@ class PublicFeedMarketRepository : MarketRepository {
             requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.13.0")
+            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
         }
         return try {
             if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {

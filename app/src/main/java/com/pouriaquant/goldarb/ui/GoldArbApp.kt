@@ -82,6 +82,7 @@ import com.pouriaquant.goldarb.data.MarketQuote
 import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.QuoteQuality
 import com.pouriaquant.goldarb.data.ServerOpportunityRun
+import com.pouriaquant.goldarb.data.StrategyCalculationRun
 import com.pouriaquant.goldarb.data.VenuePosition
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
@@ -109,6 +110,18 @@ private enum class AppSection(val label: String, val icon: ImageVector) {
     ACCOUNT("حساب", Icons.Rounded.AccountBalanceWallet),
     SETTINGS("تنظیمات", Icons.Rounded.Settings),
 }
+
+private data class PairHistorySummary(
+    val routeKey: String,
+    val buyVenueId: String,
+    val sellVenueId: String,
+    val samples: Int,
+    val accepted: Int,
+    val executed: Int,
+    val latestNetProfitToman: Double,
+    val bestNetProfitToman: Double,
+    val latestSampleAt: String,
+)
 
 @Composable
 fun GoldArbApp(
@@ -396,6 +409,27 @@ private fun PriceCell(label: String, value: Double, modifier: Modifier, color: C
 
 @Composable
 private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
+    var historyView by remember { mutableIntStateOf(0) }
+    var historyLimit by remember { mutableIntStateOf(8) }
+    val pairHistory = remember(state.calculationRuns) {
+        state.calculationRuns
+            .groupBy { it.routeKey }
+            .map { (routeKey, runs) ->
+                val latest = runs.maxBy { Instant.parse(it.sampledAt) }
+                PairHistorySummary(
+                    routeKey = routeKey,
+                    buyVenueId = latest.buyVenueId,
+                    sellVenueId = latest.sellVenueId,
+                    samples = runs.size,
+                    accepted = runs.count { it.decision == "accepted" },
+                    executed = runs.count { it.executionStatus != "calculated" },
+                    latestNetProfitToman = latest.netProfitToman,
+                    bestNetProfitToman = runs.maxOf { it.netProfitToman },
+                    latestSampleAt = latest.sampledAt,
+                )
+            }
+            .sortedByDescending { Instant.parse(it.latestSampleAt) }
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding),
         contentPadding = PaddingValues(18.dp),
@@ -410,6 +444,65 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
                 MaterialTheme.colorScheme.primary,
             )
         }
+        item { SectionTitle("جفت‌ها و تاریخچه", "ثبت‌شده روی سرور") }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf("جفت‌ها", "محاسبات", "سفارش‌ها").forEachIndexed { index, label ->
+                    Surface(
+                        modifier = Modifier.weight(1f).clickable {
+                            historyView = index
+                            historyLimit = 8
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (historyView == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        border = CardDefaults.outlinedCardBorder(),
+                    ) {
+                        Text(
+                            label,
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            textAlign = TextAlign.Center,
+                            color = if (historyView == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+        when (historyView) {
+            0 -> if (pairHistory.isEmpty()) {
+                item { NoticeCard(Icons.Rounded.Storage, "هنوز جفتی ثبت نشده", "با نخستین چرخه پایش، سابقه جفت‌ها اینجا دیده می‌شود.", Gold400) }
+            } else {
+                items(pairHistory.take(historyLimit), key = { it.routeKey }) { PairHistoryCard(it) }
+                if (pairHistory.size > historyLimit) item { HistoryMoreButton { historyLimit += 8 } }
+            }
+            1 -> if (state.calculationRuns.isEmpty()) {
+                item { NoticeCard(Icons.Rounded.Storage, "هنوز محاسبه‌ای ثبت نشده", "تاریخچه محاسبات سرور خالی است.", Gold400) }
+            } else {
+                items(state.calculationRuns.take(historyLimit), key = { it.id }) { CalculationHistoryCard(it) }
+                if (state.calculationRuns.size > historyLimit) item { HistoryMoreButton { historyLimit += 8 } }
+            }
+            else -> if (state.trades.isEmpty()) {
+                item { NoticeCard(Icons.Rounded.Storage, "هنوز سفارشی ثبت نشده", "سفارش‌های دفتر داخلی سرور اینجا دیده می‌شوند.", Gold400) }
+            } else {
+                items(state.trades.take(historyLimit), key = { it.id }) { trade ->
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp), border = CardDefaults.outlinedCardBorder()) {
+                        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(venueName(trade.venueId), fontWeight = FontWeight.Bold)
+                                StatusPill(if (trade.side == "buy") "خرید" else "فروش", if (trade.side == "buy") Mint400 else Coral400)
+                            }
+                            Text("${formatDecimal(trade.quantityGram)} گرم · ${formatToman(trade.totalToman)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatInstant(trade.occurredAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                if (state.trades.size > historyLimit) item { HistoryMoreButton { historyLimit += 8 } }
+            }
+        }
+        item { SectionTitle("فرصت‌های همین لحظه", "محاسبه با موجودی فعلی") }
         if (state.opportunities.isEmpty()) {
             item {
                 EmptyOpportunityCard()
@@ -417,7 +510,7 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
         } else {
             items(state.opportunities) { OpportunityCard(it) }
         }
-        item { SectionTitle("فرصت‌های ثبت‌شده", "فقط نمایش؛ بدون ارسال سفارش") }
+        item { SectionTitle("دوره‌های پایش", "سوابق تجمیعی جفت‌ها") }
         if (!state.serverConnected) {
             item {
                 NoticeCard(
@@ -430,7 +523,7 @@ private fun OpportunityScreen(state: GoldArbUiState, padding: PaddingValues) {
         } else if (state.serverRuns.isEmpty()) {
             item { NoticeCard(Icons.Rounded.Storage, "هنوز رویدادی ثبت نشده", "در حال حاضر فرصت فعالی برای نمایش وجود ندارد.", Gold400) }
         } else {
-            items(state.serverRuns.take(8), key = { "${it.routeKey}:${it.startedAt}" }) { ServerRunCard(it) }
+            items(state.serverRuns.take(4), key = { "${it.routeKey}:${it.startedAt}" }) { ServerRunCard(it) }
             item {
                 Text(
                     state.serverUpdatedAt?.let { "آخرین بررسی: ${formatInstant(it)}" } ?: "وضعیت به‌روز است",
@@ -461,8 +554,58 @@ private fun ServerRunCard(run: ServerOpportunityRun) {
             }
             Text("مدت ${formatDuration(run.durationMs)} · ${toPersianDigits(run.sampleCount)} بار بررسی", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("سود برآوردی ${formatToman(run.latestNetProfitToman)} · بیشترین ${formatToman(run.peakNetProfitToman)}", color = Gold400, fontWeight = FontWeight.Bold)
-            Text("فقط ثبت شده است؛ سفارشی ارسال نشده.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("سوابق تجمیعی پایش؛ اجرای دفتر سرور در تب سفارش‌ها دیده می‌شود.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+@Composable
+private fun PairHistoryCard(pair: PairHistorySummary) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp), border = CardDefaults.outlinedCardBorder()) {
+        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("${venueName(pair.buyVenueId)} ← ${venueName(pair.sellVenueId)}", fontWeight = FontWeight.Bold)
+                StatusPill("${toPersianDigits(pair.accepted)} بالای آستانه", if (pair.accepted > 0) Mint400 else Gold400)
+            }
+            Text(
+                "${toPersianDigits(pair.samples)} بررسی · ${toPersianDigits(pair.executed)} اجرا",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text("آخرین ${formatSignedToman(pair.latestNetProfitToman)} · بهترین ${formatSignedToman(pair.bestNetProfitToman)}", color = Gold400, fontWeight = FontWeight.Bold)
+            Text(formatInstant(pair.latestSampleAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun CalculationHistoryCard(run: StrategyCalculationRun) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp), border = CardDefaults.outlinedCardBorder()) {
+        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("${venueName(run.buyVenueId)} ← ${venueName(run.sellVenueId)}", fontWeight = FontWeight.Bold)
+                StatusPill(if (run.decision == "accepted") "بالای آستانه" else "زیر آستانه", if (run.decision == "accepted") Mint400 else Gold400)
+            }
+            Text("خرید ${formatToman(run.buyPriceToman)} · فروش ${formatToman(run.sellPriceToman)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("خالص ${formatSignedToman(run.netProfitToman)} · حداقل ${formatToman(run.minimumRequiredProfitToman)}", color = Gold400, fontWeight = FontWeight.Bold)
+            Text(
+                "${if (run.executionStatus == "calculated") "فقط محاسبه" else "ثبت در دفتر سرور"} · ${formatInstant(run.sampledAt)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HistoryMoreButton(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = CardDefaults.outlinedCardBorder(),
+    ) {
+        Text("نمایش موارد بیشتر", modifier = Modifier.padding(12.dp), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -741,7 +884,7 @@ private fun SettingsScreen(
                 onSelected = onVisualStyleChanged,
             )
         }
-        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۳٫۰") }
+        item { SectionTitle("درباره برنامه", "نسخه اندروید ۰٫۱۴٫۰") }
         item {
             NoticeCard(
                 Icons.Rounded.Security,
@@ -1022,6 +1165,10 @@ private fun qualityColor(quality: QuoteQuality): Color = when (quality) {
 }
 
 private fun formatToman(value: Double): String = "${NumberFormat.getNumberInstance(Locale("fa")).format(value.toLong())} تومان"
+
+private fun formatDecimal(value: Double): String = NumberFormat.getNumberInstance(Locale("fa")).apply {
+    maximumFractionDigits = 3
+}.format(value)
 
 private fun formatSignedToman(value: Double): String =
     "${if (value >= 0) "+" else "−"}${formatToman(kotlin.math.abs(value))}"

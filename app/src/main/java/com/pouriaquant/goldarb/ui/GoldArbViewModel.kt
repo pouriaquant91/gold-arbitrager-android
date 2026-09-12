@@ -15,6 +15,8 @@ import com.pouriaquant.goldarb.data.Opportunity
 import com.pouriaquant.goldarb.data.PortfolioSummary
 import com.pouriaquant.goldarb.data.PublicFeedMarketRepository
 import com.pouriaquant.goldarb.data.ServerOpportunityRun
+import com.pouriaquant.goldarb.data.StrategyCalculationRun
+import com.pouriaquant.goldarb.data.InventoryTrade
 import com.pouriaquant.goldarb.data.VenuePosition
 import com.pouriaquant.goldarb.security.AppPreferences
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +37,8 @@ data class GoldArbUiState(
     val serverUpdatedAt: String? = null,
     val positions: Map<String, VenuePosition> = emptyMap(),
     val portfolio: PortfolioSummary? = null,
+    val calculationRuns: List<StrategyCalculationRun> = emptyList(),
+    val trades: List<InventoryTrade> = emptyList(),
     val account: AccountUser? = null,
     val accountMessage: String? = null,
 )
@@ -86,6 +90,8 @@ class GoldArbViewModel(
                     serverUpdatedAt = strategyState?.updatedAt ?: snapshot.serverUpdatedAt,
                     positions = positions,
                     portfolio = strategyState?.portfolio ?: state.portfolio,
+                    calculationRuns = snapshot.calculationRuns,
+                    trades = strategyState?.trades ?: state.trades,
                     policy = policy,
                     errorMessage = if (snapshot.quotes.isEmpty()) "هنوز قیمتی دریافت نشده است" else null,
                 )
@@ -148,6 +154,7 @@ class GoldArbViewModel(
             policy = policy,
             positions = server.positions,
             portfolio = server.portfolio,
+            trades = server.trades,
             serverConnected = true,
             serverUpdatedAt = server.updatedAt,
             opportunities = ArbitrageCalculator.evaluate(state.quotes, state.quantityGram, policy, server.positions),

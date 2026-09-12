@@ -82,6 +82,7 @@ data class MarketSnapshot(
     val serverConnected: Boolean = false,
     val serverUpdatedAt: String? = null,
     val strategyState: ServerStrategyState? = null,
+    val calculationRuns: List<StrategyCalculationRun> = emptyList(),
 )
 
 data class ServerStrategyState(
@@ -92,6 +93,32 @@ data class ServerStrategyState(
     val updatedAt: String?,
     val positions: Map<String, VenuePosition>,
     val portfolio: PortfolioSummary,
+    val trades: List<InventoryTrade> = emptyList(),
+)
+
+data class InventoryTrade(
+    val id: String,
+    val venueId: String,
+    val side: String,
+    val quantityGram: Double,
+    val totalToman: Double,
+    val routeKey: String?,
+    val occurredAt: String,
+)
+
+data class StrategyCalculationRun(
+    val id: String,
+    val routeKey: String,
+    val buyVenueId: String,
+    val sellVenueId: String,
+    val decision: String,
+    val quantityGram: Double,
+    val buyPriceToman: Double,
+    val sellPriceToman: Double,
+    val netProfitToman: Double,
+    val minimumRequiredProfitToman: Double,
+    val sampledAt: String,
+    val executionStatus: String,
 )
 
 data class AccountUser(
