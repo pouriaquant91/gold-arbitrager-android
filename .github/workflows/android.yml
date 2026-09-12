@@ -41,5 +41,5 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v5
         with:
-          name: zargard-debug
+          name: arbito-debug
           path: app/build/outputs/apk/debug/app-debug.apk

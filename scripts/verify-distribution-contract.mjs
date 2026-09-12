@@ -16,18 +16,17 @@ const ui = readFileSync(
   'utf8',
 );
 
-const fa = (value) =>
-  String(value).replace(/[0-9]/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
-const faVersion = (value) => fa(value).replaceAll('.', '٫');
-
 assert.match(
   build,
   new RegExp(`versionName = "${contract.distribution.androidVersion}"`),
 );
-assert.ok(ui.includes(`MetricCard("منابع", "${fa(contract.coverage.catalogTotal)}"`));
-assert.ok(ui.includes('MetricCard("ناموفق"'));
-assert.ok(ui.includes(`CoverageBucket("${fa(contract.coverage.catalogTotal)}", "منابع بررسی‌شده"`));
-assert.ok(ui.includes(`نسخه اندروید ${faVersion(contract.distribution.androidVersion)}`));
+assert.ok(ui.includes('ModalNavigationDrawer('));
+assert.ok(ui.includes('"طلای ۱۸ عیار"'));
+assert.ok(ui.includes('"نقره ۹۹۹"'));
+assert.ok(ui.includes('"مس کاتد"'));
+assert.ok(ui.includes('"USDT / تومان"'));
+assert.ok(ui.includes('"دفتر فرضی سرور"'));
+assert.ok(ui.includes('"بدون سفارش واقعی"'));
 assert.equal(contract.strategy.activePath, 'prefunded-cross-venue-inventory');
 assert.equal(contract.strategy.minimumNetProfitScope, 'per-order');
 assert.equal(contract.strategy.minimumNetProfitRate, 0.005);
@@ -38,6 +37,11 @@ assert.equal(contract.strategy.requiresDirectBidAsk, true);
 assert.equal(contract.strategy.requiresDirectionReversal, true);
 assert.equal(contract.strategy.initialScreeningHours, 72);
 assert.equal(contract.strategy.tokenizedGoldStatus, 'paused');
-assert.ok(ui.includes('زرگرد سفارشی ارسال نمی‌کند'));
+assert.deepEqual(contract.multiAsset.markets, ['gold', 'silver', 'copper', 'usdt']);
+assert.equal(contract.multiAsset.monitorIntervalMinutes, 5);
+assert.equal(contract.multiAsset.usdtInitialTomanPerVenue, 100_000_000);
+assert.equal(contract.multiAsset.usdtInitialAssetPerVenue, 200);
+assert.equal(contract.multiAsset.tradeMode, 'server-paper-ledger');
+assert.equal(contract.identity.visibleInClients, false);
 
 console.log('Android distribution contract is consistent.');
