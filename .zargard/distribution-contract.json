@@ -1,7 +1,7 @@
 {
   "schemaVersion": 5,
-  "updatedAt": "2026-09-12T11:30:00Z",
-  "productName": "ZarGard",
+  "updatedAt": "2026-09-12T12:15:00Z",
+  "productName": "Arbito",
   "strategy": {
     "minimumNetProfitRate": 0.005,
     "minimumNetProfitBasis": "lower-leg-notional",
@@ -42,15 +42,26 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.14.0",
-    "pwaVersion": "0.8.0"
+    "androidVersion": "0.15.0",
+    "pwaVersion": "0.9.0"
+  },
+  "multiAsset": {
+    "markets": ["gold", "silver", "copper", "usdt"],
+    "monitorIntervalMinutes": 5,
+    "signalMode": "server-formula",
+    "tradeMode": "server-paper-ledger",
+    "usdtInitialTomanPerVenue": 100000000,
+    "usdtInitialAssetPerVenue": 200,
+    "usdtUnit": "USDT",
+    "endpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/market-signals"
   },
   "identity": {
     "provider": "zargard-server",
     "endpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/account",
     "roles": ["root", "admin", "user"],
     "profileEditing": true,
-    "futureLicensingReady": true
+    "futureLicensingReady": true,
+    "visibleInClients": false
   },
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",

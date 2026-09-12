@@ -34,6 +34,8 @@ class PublicFeedMarketRepository : MarketRepository {
         val strategyState = strategyResult.getOrNull()
         val calculationsResult = runCatching(::fetchStrategyCalculations)
         val calculationRuns = calculationsResult.getOrDefault(emptyList())
+        val assetResult = runCatching(::fetchAssetSnapshot)
+        val assetSnapshot = assetResult.getOrNull()
 
         val byId = quotes.associateBy { it.venueId }
         val completeCatalog = MarketCatalog.entries.map { byId[it.id] ?: MarketCatalog.unavailable(it) }
@@ -42,11 +44,15 @@ class PublicFeedMarketRepository : MarketRepository {
             receivedAt = Instant.now().toString(),
             failedVenueNames = failed,
             serverRuns = serverRuns,
-            serverConnected = serverResult.isSuccess && strategyResult.isSuccess && calculationsResult.isSuccess,
+            serverConnected = serverResult.isSuccess && strategyResult.isSuccess && calculationsResult.isSuccess && assetResult.isSuccess,
             serverUpdatedAt = calculationRuns.maxByOrNull { it.sampledAt }?.sampledAt
                 ?: serverRuns.maxByOrNull { it.updatedAt }?.updatedAt,
             strategyState = strategyState,
             calculationRuns = calculationRuns,
+            assetSignals = assetSnapshot?.signals.orEmpty(),
+            assetTrades = assetSnapshot?.trades.orEmpty(),
+            assetPositions = assetSnapshot?.positions.orEmpty(),
+            assetHeartbeats = assetSnapshot?.heartbeats.orEmpty(),
         )
     }
 
@@ -63,7 +69,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
+            setRequestProperty("User-Agent", "Arbito-Android/0.15.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -82,7 +88,7 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
+            setRequestProperty("User-Agent", "Arbito-Android/0.15.0")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
@@ -100,7 +106,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
+            setRequestProperty("User-Agent", "Arbito-Android/0.15.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -309,6 +315,60 @@ class PublicFeedMarketRepository : MarketRepository {
         }
     }
 
+    private data class AssetSnapshot(
+        val signals: List<AssetSignal>,
+        val trades: List<AssetTrade>,
+        val positions: List<AssetPosition>,
+        val heartbeats: List<AssetHeartbeat>,
+    )
+
+    private fun fetchAssetSnapshot(): AssetSnapshot {
+        val payload = getJson("$SERVER_BASE_URL/api/market-signals")
+        val signalRows = payload.optJSONArray("signals")
+        val signals = if (signalRows == null) emptyList() else (0 until signalRows.length()).map { index ->
+            val row = signalRows.getJSONObject(index)
+            AssetSignal(
+                id = row.getString("id"), asset = row.getString("asset"), routeKey = row.getString("route_key"),
+                buyVenueId = row.getString("buy_venue_id"), sellVenueId = row.getString("sell_venue_id"),
+                quantity = row.getDouble("quantity"), unit = row.getString("unit"),
+                buyPriceToman = row.getDouble("buy_price_toman"), sellPriceToman = row.getDouble("sell_price_toman"),
+                totalCostsToman = row.getDouble("total_costs_toman"), netProfitToman = row.getDouble("net_profit_toman"),
+                minimumRequiredProfitToman = row.getDouble("minimum_required_profit_toman"),
+                decision = row.getString("decision"), executionStatus = row.getString("execution_status"),
+                sampledAt = row.getString("sampled_at"),
+            )
+        }
+        val tradeRows = payload.optJSONArray("trades")
+        val trades = if (tradeRows == null) emptyList() else (0 until tradeRows.length()).map { index ->
+            val row = tradeRows.getJSONObject(index)
+            AssetTrade(
+                id = row.getString("id"), signalId = row.getString("signal_id"), asset = row.getString("asset"),
+                venueId = row.getString("venue_id"), side = row.getString("side"), quantity = row.getDouble("quantity"),
+                unit = row.getString("unit"), totalToman = row.getDouble("total_toman"), occurredAt = row.getString("occurred_at"),
+            )
+        }
+        val positionRows = payload.optJSONArray("positions")
+        val positions = if (positionRows == null) emptyList() else (0 until positionRows.length()).map { index ->
+            val row = positionRows.getJSONObject(index)
+            AssetPosition(
+                asset = row.getString("asset"), venueId = row.getString("venue_id"), unit = row.getString("unit"),
+                initialTomanBalance = row.getDouble("initial_toman_balance"), initialAssetBalance = row.getDouble("initial_asset_balance"),
+                tomanBalance = row.getDouble("toman_balance"), assetBalance = row.getDouble("asset_balance"),
+                lastPriceToman = if (row.isNull("last_price_toman")) null else row.getDouble("last_price_toman"),
+                updatedAt = row.getString("updated_at"),
+            )
+        }
+        val heartbeatRows = payload.optJSONArray("heartbeats")
+        val heartbeats = if (heartbeatRows == null) emptyList() else (0 until heartbeatRows.length()).map { index ->
+            val row = heartbeatRows.getJSONObject(index)
+            AssetHeartbeat(
+                asset = row.getString("asset"), status = row.getString("status"), sourceCount = row.getInt("source_count"),
+                errorCount = row.getInt("error_count"), checkedAt = row.getString("checked_at"),
+            )
+        }
+        return AssetSnapshot(signals, trades, positions, heartbeats)
+    }
+
     private fun parseStrategyState(payload: JSONObject): ServerStrategyState {
         require(payload.getInt("schemaVersion") == 2 && payload.getString("storage") == "server")
         val rows = payload.getJSONObject("positions")
@@ -385,7 +445,7 @@ class PublicFeedMarketRepository : MarketRepository {
             requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("User-Agent", "ZarGard-Android/0.14.0")
+            setRequestProperty("User-Agent", "Arbito-Android/0.15.0")
         }
         return try {
             if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {

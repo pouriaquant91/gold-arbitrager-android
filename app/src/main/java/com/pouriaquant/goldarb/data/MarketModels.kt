@@ -83,6 +83,60 @@ data class MarketSnapshot(
     val serverUpdatedAt: String? = null,
     val strategyState: ServerStrategyState? = null,
     val calculationRuns: List<StrategyCalculationRun> = emptyList(),
+    val assetSignals: List<AssetSignal> = emptyList(),
+    val assetTrades: List<AssetTrade> = emptyList(),
+    val assetPositions: List<AssetPosition> = emptyList(),
+    val assetHeartbeats: List<AssetHeartbeat> = emptyList(),
+)
+
+data class AssetSignal(
+    val id: String,
+    val asset: String,
+    val routeKey: String,
+    val buyVenueId: String,
+    val sellVenueId: String,
+    val quantity: Double,
+    val unit: String,
+    val buyPriceToman: Double,
+    val sellPriceToman: Double,
+    val totalCostsToman: Double,
+    val netProfitToman: Double,
+    val minimumRequiredProfitToman: Double,
+    val decision: String,
+    val executionStatus: String,
+    val sampledAt: String,
+)
+
+data class AssetTrade(
+    val id: String,
+    val signalId: String,
+    val asset: String,
+    val venueId: String,
+    val side: String,
+    val quantity: Double,
+    val unit: String,
+    val totalToman: Double,
+    val occurredAt: String,
+)
+
+data class AssetPosition(
+    val asset: String,
+    val venueId: String,
+    val unit: String,
+    val initialTomanBalance: Double,
+    val initialAssetBalance: Double,
+    val tomanBalance: Double,
+    val assetBalance: Double,
+    val lastPriceToman: Double?,
+    val updatedAt: String,
+)
+
+data class AssetHeartbeat(
+    val asset: String,
+    val status: String,
+    val sourceCount: Int,
+    val errorCount: Int,
+    val checkedAt: String,
 )
 
 data class ServerStrategyState(

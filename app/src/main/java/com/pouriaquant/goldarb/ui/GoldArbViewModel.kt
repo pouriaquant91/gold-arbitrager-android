@@ -18,6 +18,10 @@ import com.pouriaquant.goldarb.data.ServerOpportunityRun
 import com.pouriaquant.goldarb.data.StrategyCalculationRun
 import com.pouriaquant.goldarb.data.InventoryTrade
 import com.pouriaquant.goldarb.data.VenuePosition
+import com.pouriaquant.goldarb.data.AssetSignal
+import com.pouriaquant.goldarb.data.AssetTrade
+import com.pouriaquant.goldarb.data.AssetPosition
+import com.pouriaquant.goldarb.data.AssetHeartbeat
 import com.pouriaquant.goldarb.security.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,6 +43,10 @@ data class GoldArbUiState(
     val portfolio: PortfolioSummary? = null,
     val calculationRuns: List<StrategyCalculationRun> = emptyList(),
     val trades: List<InventoryTrade> = emptyList(),
+    val assetSignals: List<AssetSignal> = emptyList(),
+    val assetTrades: List<AssetTrade> = emptyList(),
+    val assetPositions: List<AssetPosition> = emptyList(),
+    val assetHeartbeats: List<AssetHeartbeat> = emptyList(),
     val account: AccountUser? = null,
     val accountMessage: String? = null,
 )
@@ -92,6 +100,10 @@ class GoldArbViewModel(
                     portfolio = strategyState?.portfolio ?: state.portfolio,
                     calculationRuns = snapshot.calculationRuns,
                     trades = strategyState?.trades ?: state.trades,
+                    assetSignals = snapshot.assetSignals,
+                    assetTrades = snapshot.assetTrades,
+                    assetPositions = snapshot.assetPositions,
+                    assetHeartbeats = snapshot.assetHeartbeats,
                     policy = policy,
                     errorMessage = if (snapshot.quotes.isEmpty()) "هنوز قیمتی دریافت نشده است" else null,
                 )
