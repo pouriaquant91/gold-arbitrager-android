@@ -42,7 +42,7 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.18.0",
+    "androidVersion": "0.18.1",
     "pwaVersion": "1.2.0",
     "iosVersion": "0.1.0"
   },

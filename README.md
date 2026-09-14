@@ -2,7 +2,7 @@
 
 کلاینت بومی Android برای مشاهده سیگنال و معاملات فرضی آربیتراژ چهار بازار طلا، نقره، مس و تتر. اپ فقط گزارش مشترک سرور را نمایش می‌دهد و هیچ سفارش واقعی به صرافی یا فروشگاه ارسال نمی‌کند.
 
-## نسخه 0.18.0
+## نسخه 0.18.1
 
 - برند و نشان رادار چهارگرهی رصد
 - منوی همبرگری به‌جای ناوبری شلوغ قبلی
@@ -24,8 +24,8 @@
 
 ## دریافت
 
-- [صفحه انتشار 0.18.0](https://github.com/pouriaquant91/gold-arbitrager-android/releases/tag/android-v0.18.0)
-- [دانلود مستقیم APK](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.18.0/RASAD-android-0.18.0-beta.apk)
+- [صفحه انتشار 0.18.1](https://github.com/pouriaquant91/gold-arbitrager-android/releases/tag/android-v0.18.1)
+- [دانلود مستقیم APK](https://github.com/pouriaquant91/gold-arbitrager-android/releases/download/android-v0.18.1/RASAD-android-0.18.1-beta.apk)
 
 ## نسخه PWA
 

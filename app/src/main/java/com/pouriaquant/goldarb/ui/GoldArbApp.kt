@@ -134,8 +134,8 @@ private enum class AssetPage(
     val referenceName: String,
 ) {
     GOLD("gold", "طلا", "Au", "طلای ۱۸ عیار", Gold, emptyList(), "tgju-gold", "TGJU طلا"),
-    SILVER("silver", "نقره", "Ag", "نقره ۹۹۹", Silver, listOf("talanex-silver" to "طلانکس نقره", "iran-silver" to "بازار تخصصی نقره ایران", "silver-store" to "فروشگاه‌های شمش نقره", "ime-silver" to "بورس کالای ایران", "zarminex-silver" to "زرین‌مکس", "tehran-silver" to "بازار نقره تهران"), "tgju-silver", "TGJU نقره"),
-    COPPER("copper", "مس", "Cu", "مس کاتد", Copper, listOf("ime-copper" to "بورس کالای ایران", "lme-copper" to "بورس فلزات لندن", "ahanonline-copper" to "آهن آنلاین", "ahanprice-copper" to "آهن پرایس", "markazeahan-copper" to "مرکزآهن", "iranmetals-copper" to "بازار فلزات ایران"), "tgju-copper", "TGJU مس"),
+    SILVER("silver", "نقره", "Ag", "نقره ۹۹۹", Silver, listOf("talanex-silver" to "طلانکس نقره", "noghresea-silver" to "نقره‌سی · پژوهشی", "iran-silver" to "بازار تخصصی نقره ایران", "silver-store" to "فروشگاه‌های شمش نقره", "ime-silver" to "بورس کالای ایران", "zarminex-silver" to "زرین‌مکس", "tehran-silver" to "بازار نقره تهران"), "tgju-silver", "TGJU نقره"),
+    COPPER("copper", "مس", "Cu", "مس کاتد", Copper, listOf("meschi-copper" to "مس‌چی · پژوهشی", "ime-copper" to "بورس کالای ایران", "lme-copper" to "بورس فلزات لندن", "ahanonline-copper" to "آهن آنلاین", "ahanprice-copper" to "آهن پرایس", "markazeahan-copper" to "مرکزآهن", "iranmetals-copper" to "بازار فلزات ایران"), "tgju-copper", "TGJU مس"),
     USDT("usdt", "تتر", "₮", "USDT / تومان", Tether, listOf("wallex" to "والکس", "tabdeal" to "تبدیل", "exir" to "اکسیر", "raastin" to "راستین", "ramzinex" to "رمزینکس", "ompfinex" to "اوام‌پی‌فینکس", "nobitex" to "نوبیتکس", "sarrafex" to "صرافکس", "bitpin" to "بیت‌پین", "tetherland" to "تترلند", "bit24" to "بیت۲۴", "aban-tether" to "آبان‌تتر", "ok-exchange" to "اوکی‌اکسچنج", "arzplus" to "ارزپلاس", "toobit-fa" to "توبیت فارسی", "sarmayex" to "سرمایکس", "excoino" to "اکسکوینو", "arzpa" to "ارزپا", "farhad-exchange" to "فرهاد اکسچنج"), "tgju-usdt", "TGJU تتر"),
     SETTINGS("settings", "تنظیمات", "⚙", "ظاهر و امنیت دستگاه", Color(0xFF8EB8E7), emptyList(), "", ""),
 }
