@@ -2,6 +2,7 @@
 .gradle/
 .gradle-user/
 .gradle-run/
+.gradle-local/
 .android-user/
 .android-run/
 .android-sdk/
