@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "updatedAt": "2026-09-14T18:00:00Z",
   "productName": "RASAD",
   "strategy": {
@@ -42,12 +42,14 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.17.0",
-    "pwaVersion": "1.1.0"
+    "androidVersion": "0.18.0",
+    "pwaVersion": "1.2.0",
+    "iosVersion": "0.1.0"
   },
   "multiAsset": {
     "markets": ["gold", "silver", "copper", "usdt"],
     "monitorIntervalMinutes": 5,
+    "schedulerSemantics": "github-actions-best-effort-watchdog",
     "signalMode": "server-formula",
     "tradeMode": "server-paper-ledger",
     "usdtInitialTomanPerVenue": 100000000,
@@ -74,6 +76,13 @@
   "repositories": {
     "core": "https://github.com/daredevilbizdev/gold-arbitrager",
     "android": "https://github.com/pouriaquant91/gold-arbitrager-android",
-    "pwa": "https://github.com/pouriaquant91/zargard-pwa"
+    "pwa": "https://github.com/pouriaquant91/zargard-pwa",
+    "ios": "https://github.com/pouriaquant91/rasad-ios"
+  },
+  "clientPreferences": {
+    "fontFamilies": ["vazirmatn", "estedad", "sahel", "system"],
+    "fontScales": ["compact", "normal", "large"],
+    "themeModes": ["system", "light", "dark"],
+    "themePacks": ["graphite", "aurora", "paper"]
   }
 }

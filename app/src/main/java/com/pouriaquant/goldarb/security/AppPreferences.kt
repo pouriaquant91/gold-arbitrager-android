@@ -23,12 +23,15 @@ enum class AppFontScale(val multiplier: Float) {
     LARGE(1.15f),
 }
 
+enum class AppFontFamily { VAZIRMATN, ESTEDAD, SAHEL, SYSTEM }
+
 private const val DATASTORE_FILE_NAME = "rasad_appearance"
 private const val LEGACY_FILE_NAME = "zararb_preferences"
 private const val KEY_THEME_MODE = "theme_mode"
 private const val KEY_VISUAL_STYLE = "visual_style"
 private const val KEY_BRIGHTNESS = "brightness"
 private const val KEY_FONT_SCALE = "font_scale"
+private const val KEY_FONT_FAMILY = "font_family"
 
 private val Context.appearanceDataStore by preferencesDataStore(
     name = DATASTORE_FILE_NAME,
@@ -38,7 +41,7 @@ private val Context.appearanceDataStore by preferencesDataStore(
             SharedPreferencesMigration(
                 context,
                 LEGACY_FILE_NAME,
-                setOf(KEY_THEME_MODE, KEY_VISUAL_STYLE, KEY_BRIGHTNESS, KEY_FONT_SCALE),
+                setOf(KEY_THEME_MODE, KEY_VISUAL_STYLE, KEY_BRIGHTNESS, KEY_FONT_SCALE, KEY_FONT_FAMILY),
             ),
         )
     },
@@ -51,6 +54,7 @@ class AppPreferences(context: Context) {
     private val visualStyleKey = stringPreferencesKey(KEY_VISUAL_STYLE)
     private val brightnessKey = stringPreferencesKey(KEY_BRIGHTNESS)
     private val fontScaleKey = stringPreferencesKey(KEY_FONT_SCALE)
+    private val fontFamilyKey = stringPreferencesKey(KEY_FONT_FAMILY)
 
     val themeModeFlow = appContext.appearanceDataStore.data
         .catch { error ->
@@ -92,6 +96,15 @@ class AppPreferences(context: Context) {
                 .getOrDefault(AppFontScale.NORMAL)
         }
 
+    val fontFamilyFlow = appContext.appearanceDataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { values ->
+            runCatching { AppFontFamily.valueOf(values[fontFamilyKey].orEmpty()) }
+                .getOrDefault(AppFontFamily.VAZIRMATN)
+        }
+
     suspend fun setThemeMode(value: AppThemeMode) {
         appContext.appearanceDataStore.edit { values -> values[themeModeKey] = value.name }
     }
@@ -106,6 +119,10 @@ class AppPreferences(context: Context) {
 
     suspend fun setFontScale(value: AppFontScale) {
         appContext.appearanceDataStore.edit { values -> values[fontScaleKey] = value.name }
+    }
+
+    suspend fun setFontFamily(value: AppFontFamily) {
+        appContext.appearanceDataStore.edit { values -> values[fontFamilyKey] = value.name }
     }
 
     var biometricLockEnabled: Boolean

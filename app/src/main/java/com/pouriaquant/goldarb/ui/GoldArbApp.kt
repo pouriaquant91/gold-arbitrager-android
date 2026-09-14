@@ -33,6 +33,8 @@ import androidx.compose.material.icons.rounded.Brightness6
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.FormatSize
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Menu
@@ -60,6 +62,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TooltipBox
@@ -102,10 +105,13 @@ import com.pouriaquant.goldarb.data.MarketCatalog
 import com.pouriaquant.goldarb.data.QuoteQuality
 import com.pouriaquant.goldarb.security.AppBrightness
 import com.pouriaquant.goldarb.security.AppFontScale
+import com.pouriaquant.goldarb.security.AppFontFamily
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
 
 private val Gold = Color(0xFFE9B949)
@@ -159,11 +165,13 @@ fun GoldArbApp(
     visualStyle: AppVisualStyle,
     brightness: AppBrightness,
     fontScale: AppFontScale,
+    fontFamily: AppFontFamily,
     onBiometricChanged: (Boolean) -> Unit,
     onThemeModeChanged: (AppThemeMode) -> Unit,
     onVisualStyleChanged: (AppVisualStyle) -> Unit,
     onBrightnessChanged: (AppBrightness) -> Unit,
     onFontScaleChanged: (AppFontScale) -> Unit,
+    onFontFamilyChanged: (AppFontFamily) -> Unit,
     viewModel: GoldArbViewModel = viewModel(),
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -237,7 +245,15 @@ fun GoldArbApp(
                             }
                         },
                         actions = {
-                            StatusPill(state.serverConnected)
+                            StatusPill(
+                                connected = state.serverConnected,
+                                loading = state.isLoading,
+                                updatedAt = if (page == AssetPage.GOLD || page == AssetPage.SETTINGS) {
+                                    state.serverUpdatedAt
+                                } else {
+                                    state.assetHeartbeats.firstOrNull { it.asset == page.key }?.checkedAt
+                                },
+                            )
                             LabeledIconButton("دریافت تازه‌ترین گزارش از سرور", viewModel::refresh) {
                                 if (state.isLoading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                 else Icon(Icons.Rounded.Refresh, "به‌روزرسانی گزارش سرور")
@@ -255,6 +271,7 @@ fun GoldArbApp(
                     visualStyle = visualStyle,
                     brightness = brightness,
                     fontScale = fontScale,
+                    fontFamily = fontFamily,
                     minimumProfitPercent = state.policy.minimumNetProfitRate * 100,
                     settingsMessage = state.errorMessage,
                     onBiometricChanged = onBiometricChanged,
@@ -262,6 +279,7 @@ fun GoldArbApp(
                     onVisualStyleChanged = onVisualStyleChanged,
                     onBrightnessChanged = onBrightnessChanged,
                     onFontScaleChanged = onFontScaleChanged,
+                    onFontFamilyChanged = onFontFamilyChanged,
                     onMinimumProfitPercentChanged = viewModel::setMinimumProfitPercent,
                 )
                 else AssetMarketPage(page, state, padding)
@@ -300,7 +318,7 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
         item {
             ReferenceMarketCard(page, referencePrice, usdReference)
         }
-        item { VenuePriceList(page, priceItems) }
+        item { VenuePriceList(page, priceItems, state.isLoading, state.serverConnected) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp)) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
@@ -316,7 +334,6 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
             1 -> if (trades.isEmpty() && page == AssetPage.GOLD && state.trades.isEmpty()) item { EmptyCard("سفارش فرضی ثبت نشده است.") } else if (page == AssetPage.GOLD) items(state.trades.take(30), key = { it.id }) { HistoryTradeRow(it.venueId, it.side, it.quantityGram, "گرم", it.totalToman, it.occurredAt, venueName) } else items(trades.take(30), key = { it.id }) { HistoryTradeRow(it.venueId, it.side, it.quantity, it.unit, it.totalToman, it.occurredAt, venueName) }
             else -> if (page == AssetPage.GOLD) items(state.positions.values.toList().take(60), key = { it.venueId }) { PositionRow(it.venueId, it.tomanBalance, it.goldBalanceGram, "گرم", venueName) } else if (positions.isEmpty()) item { EmptyCard("دفتر دارایی این بازار هنوز ایجاد نشده است.") } else items(positions, key = { it.venueId }) { PositionRow(it.venueId, it.tomanBalance, it.assetBalance, it.unit, venueName) }
         }
-        item { VenueCoverage(page, signals, positions) }
     }
 }
 
@@ -430,20 +447,66 @@ private fun formatReferencePrice(reference: ReferencePrice): String = when (refe
 }
 
 @Composable
-private fun VenuePriceList(page: AssetPage, prices: List<VenuePriceItem>) {
+private fun VenuePriceList(
+    page: AssetPage,
+    prices: List<VenuePriceItem>,
+    loading: Boolean,
+    connected: Boolean,
+) {
+    val platformPrices = prices.filterNot { it.isReference }
+    val priced = platformPrices.filter { it.ask != null || it.bid != null || it.last != null }
+    val waiting = platformPrices.filter { it.ask == null && it.bid == null && it.last == null }
+    var waitingExpanded by remember(page, prices) { mutableStateOf(false) }
     Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("قیمت همه پلتفرم‌ها", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
                 Text(
-                    "${formatter.format(prices.size)} منبع ${page.label}؛ ردیف‌های بدون فید نیز حذف نشده‌اند.",
+                    "${formatter.format(priced.size)} قیمت معتبر از ${formatter.format(platformPrices.size)} منبع ${page.label}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                 )
             }
-            prices.forEachIndexed { index, item ->
+            if (priced.isEmpty()) {
+                val message = when {
+                    loading -> "در حال دریافت قیمت‌های ${page.label} از سرور…"
+                    !connected -> "ارتباط با سرور قیمت برقرار نیست؛ قیمت ساختگی نمایش داده نمی‌شود."
+                    else -> "هنوز قیمت معتبر دریافت نشده؛ پایش ادامه دارد."
+                }
+                Surface(
+                    modifier = Modifier.fillMaxWidth().semantics { stateDescription = message },
+                    color = page.color.copy(alpha = .10f),
+                    shape = RoundedCornerShape(15.dp),
+                ) {
+                    Text(message, Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp)
+                }
+            }
+            priced.forEachIndexed { index, item ->
                 if (index > 0) HorizontalDivider()
                 VenuePriceRow(page, item)
+            }
+            if (waiting.isNotEmpty()) {
+                HorizontalDivider()
+                TextButton(
+                    onClick = { waitingExpanded = !waitingExpanded },
+                    modifier = Modifier.fillMaxWidth().semantics {
+                        stateDescription = if (waitingExpanded) "باز" else "بسته"
+                    },
+                ) {
+                    Text(
+                        if (waitingExpanded) "بستن منابع بدون قیمت" else "نمایش ${formatter.format(waiting.size)} منبع بدون قیمت",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Start,
+                    )
+                    Icon(
+                        if (waitingExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = if (waitingExpanded) "بستن فهرست" else "باز کردن فهرست",
+                    )
+                }
+                if (waitingExpanded) waiting.forEachIndexed { index, item ->
+                    if (index > 0) HorizontalDivider()
+                    VenuePriceRow(page, item)
+                }
             }
         }
     }
@@ -490,9 +553,6 @@ private fun PriceLine(label: String, value: Double?) {
 @Composable private fun HistoryTradeRow(venueId:String,side:String,quantity:Double,unit:String,total:Double,time:String,venueName:(String)->String){Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(11.dp)){Surface(color=(if(side=="buy")Positive else Negative).copy(alpha=.14f),shape=RoundedCornerShape(9.dp)){Text(if(side=="buy")"خرید" else "فروش",color=if(side=="buy")Positive else Negative,modifier=Modifier.padding(8.dp),fontSize=11.sp)};Column(Modifier.weight(1f)){Text(venueName(venueId),fontWeight=FontWeight.Bold);Text(time,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Column(horizontalAlignment=Alignment.End){Text("${formatter.format(quantity)} $unit",fontWeight=FontWeight.Bold);Text(money(total),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}
 @Composable private fun PositionRow(venueId:String,toman:Double,asset:Double,unit:String,venueName:(String)->String){Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(venueName(venueId),fontWeight=FontWeight.Bold);Text("دارایی سرور",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Column(horizontalAlignment=Alignment.End){Text("${formatter.format(asset)} $unit",fontWeight=FontWeight.Bold);Text(money(toman),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}}
 
-@Composable private fun VenueCoverage(page:AssetPage,signals:List<DisplaySignal>,positions:List<AssetPosition>){Card(shape=RoundedCornerShape(24.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){Text("منابع متناسب با ${page.label}",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);page.venues.forEach{(id,name)->val connected=positions.any{it.venueId==id}||signals.any{it.buyVenueId==id||it.sellVenueId==id};Row(Modifier.fillMaxWidth().padding(vertical=6.dp),verticalAlignment=Alignment.CenterVertically){ElementBadge(name.take(1),page.color,38);Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(name,fontWeight=FontWeight.Bold);Text(if(connected)"متصل به گزارش سرور" else "در انتظار خوراک دوطرفه",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Box(Modifier.size(8.dp).clip(CircleShape).background(if(connected)Positive else MaterialTheme.colorScheme.outline))}}}}
-}
-
 @Composable private fun EmptyContent(page:AssetPage){Column(Modifier.fillMaxWidth().padding(vertical=34.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)){Icon(Icons.Rounded.CloudOff,null,tint=page.color,modifier=Modifier.size(38.dp));Text(if(page==AssetPage.SILVER||page==AssetPage.COPPER)"خوراک دوطرفه معتبر لازم است" else "فرصت قابل‌قبولی ثبت نشده",fontWeight=FontWeight.Bold);Text("تا اتصال منبع معتبر، قیمت یا سود ساختگی نمایش داده نمی‌شود.",textAlign=TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=22.sp)}}
 @Composable private fun EmptyCard(text:String){Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Text(text,Modifier.fillMaxWidth().padding(25.dp),textAlign=TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
 
@@ -505,6 +565,7 @@ private fun SettingsPage(
     visualStyle: AppVisualStyle,
     brightness: AppBrightness,
     fontScale: AppFontScale,
+    fontFamily: AppFontFamily,
     minimumProfitPercent: Double,
     settingsMessage: String?,
     onBiometricChanged: (Boolean) -> Unit,
@@ -512,6 +573,7 @@ private fun SettingsPage(
     onVisualStyleChanged: (AppVisualStyle) -> Unit,
     onBrightnessChanged: (AppBrightness) -> Unit,
     onFontScaleChanged: (AppFontScale) -> Unit,
+    onFontFamilyChanged: (AppFontFamily) -> Unit,
     onMinimumProfitPercentChanged: (Double) -> Unit,
 ) {
     var thresholdDraft by remember(minimumProfitPercent) { mutableFloatStateOf(minimumProfitPercent.toFloat().coerceIn(0f, 10f)) }
@@ -595,6 +657,15 @@ private fun SettingsPage(
                 }
             }
         }
+        item {
+            SettingsGroup(Icons.Rounded.FormatSize, "نوع قلم", "انتخاب شما ذخیره می‌شود؛ تا زمان افزوده‌شدن فایل‌های دارای مجوز، قلم امن سیستم نمایش داده می‌شود.") {
+                AppFontFamily.entries.forEach { value ->
+                    ChoiceRow(value.displayName(), value.description(), value == fontFamily) {
+                        onFontFamilyChanged(value)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -633,6 +704,13 @@ private fun AppBrightness.displayName() = when (this) { AppBrightness.SYSTEM -> 
 private fun AppBrightness.description() = when (this) { AppBrightness.SYSTEM -> "بدون تغییر روشنایی سیستم"; AppBrightness.LOW -> "۳۵٪، مناسب محیط تاریک"; AppBrightness.MEDIUM -> "۶۵٪، مناسب استفاده روزمره"; AppBrightness.HIGH -> "۱۰۰٪، مناسب محیط روشن" }
 private fun AppFontScale.displayName() = when (this) { AppFontScale.SMALL -> "کوچک"; AppFontScale.NORMAL -> "معمولی"; AppFontScale.LARGE -> "بزرگ" }
 private fun AppFontScale.description() = when (this) { AppFontScale.SMALL -> "۹۰٪ برای نمایش اطلاعات بیشتر"; AppFontScale.NORMAL -> "۱۰۰٪، اندازه پیشنهادی"; AppFontScale.LARGE -> "۱۱۵٪ برای خوانایی بیشتر" }
+private fun AppFontFamily.displayName() = when (this) { AppFontFamily.VAZIRMATN -> "وزیرمتن"; AppFontFamily.ESTEDAD -> "استعداد"; AppFontFamily.SAHEL -> "ساحل"; AppFontFamily.SYSTEM -> "قلم سیستم" }
+private fun AppFontFamily.description() = when (this) {
+    AppFontFamily.VAZIRMATN -> "انتخاب پیشنهادی؛ اکنون با fallback امن سیستم"
+    AppFontFamily.ESTEDAD -> "فشرده و مناسب داده؛ اکنون با fallback امن سیستم"
+    AppFontFamily.SAHEL -> "نرم و خوانا؛ اکنون با fallback امن سیستم"
+    AppFontFamily.SYSTEM -> "قلم پیش‌فرض دستگاه، بدون فایل اضافی"
+}
 @Composable private fun SettingSwitch(icon:androidx.compose.ui.graphics.vector.ImageVector,title:String,subtitle:String,checked:Boolean,enabled:Boolean,onChecked:(Boolean)->Unit){Card(shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Row(Modifier.fillMaxWidth().semantics(mergeDescendants=true){contentDescription=title;stateDescription=if(!enabled)"در دسترس نیست" else if(checked)"روشن" else "خاموش"}.padding(18.dp),verticalAlignment=Alignment.CenterVertically){Icon(icon,null);Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(title,fontWeight=FontWeight.Bold);Text(subtitle,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked,onCheckedChange=onChecked,enabled=enabled)}}}
 
 @Composable
@@ -646,7 +724,34 @@ private fun LabeledIconButton(label: String, onClick: () -> Unit, content: @Comp
     }
 }
 
-@Composable private fun StatusPill(connected:Boolean){Surface(shape=RoundedCornerShape(999.dp),color=(if(connected)Positive else Negative).copy(alpha=.12f)){Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){Box(Modifier.size(7.dp).clip(CircleShape).background(if(connected)Positive else Negative));Text(if(connected)"سرور" else "قطع",fontSize=11.sp,color=if(connected)Positive else Negative)}}}
+@Composable
+private fun StatusPill(connected: Boolean, loading: Boolean, updatedAt: String?) {
+    val fresh = updatedAt?.let { value ->
+        runCatching { Duration.between(Instant.parse(value), Instant.now()).abs() < Duration.ofMinutes(12) }
+            .getOrDefault(false)
+    } ?: false
+    val (label, color) = when {
+        loading -> "در حال دریافت" to Caution
+        !connected -> "قطع ارتباط" to Negative
+        updatedAt == null -> "در انتظار داده" to Caution
+        fresh -> "پایش تازه" to Positive
+        else -> "داده قدیمی" to Caution
+    }
+    Surface(
+        modifier = Modifier.semantics { stateDescription = label },
+        shape = RoundedCornerShape(999.dp),
+        color = color.copy(alpha = .12f),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(color))
+            Text(label, fontSize = 11.sp, color = color)
+        }
+    }
+}
 @Composable private fun RasadMark(size:Int=42){Image(painter=painterResource(R.drawable.ic_rasad_mark),contentDescription="نشان رصد",modifier=Modifier.size(size.dp))}
 @Composable private fun ElementBadge(symbol:String,color:Color,size:Int){Box(Modifier.size(size.dp).clip(RoundedCornerShape((size/3).dp)).background(color.copy(alpha=.9f)),contentAlignment=Alignment.Center){Text(symbol,color=Color(0xFF11141B),fontWeight=FontWeight.Black)}}
 private fun money(value:Double)="${formatter.format(value.toLong())} تومان"

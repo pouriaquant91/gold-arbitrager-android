@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import com.pouriaquant.goldarb.security.AppPreferences
 import com.pouriaquant.goldarb.security.AppBrightness
 import com.pouriaquant.goldarb.security.AppFontScale
+import com.pouriaquant.goldarb.security.AppFontFamily
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.GoldArbApp
@@ -35,6 +36,7 @@ class MainActivity : FragmentActivity() {
     private var visualStyle by mutableStateOf(AppVisualStyle.GRAPHITE)
     private var brightness by mutableStateOf(AppBrightness.SYSTEM)
     private var fontScale by mutableStateOf(AppFontScale.NORMAL)
+    private var fontFamily by mutableStateOf(AppFontFamily.VAZIRMATN)
     private var authenticationRunning = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +55,9 @@ class MainActivity : FragmentActivity() {
         }
         lifecycleScope.launch {
             preferences.fontScaleFlow.collect { savedScale -> fontScale = savedScale }
+        }
+        lifecycleScope.launch {
+            preferences.fontFamilyFlow.collect { savedFamily -> fontFamily = savedFamily }
         }
         unlocked = !biometricEnabled
         setContent {
@@ -82,7 +87,7 @@ class MainActivity : FragmentActivity() {
                     fontScale = deviceDensity.fontScale * fontScale.multiplier,
                 ),
             ) {
-                RasadTheme(darkTheme = darkTheme, visualStyle = visualStyle) {
+                RasadTheme(darkTheme = darkTheme, visualStyle = visualStyle, fontFamily = fontFamily) {
                     if (biometricEnabled && !unlocked) {
                         LockScreen(biometricAvailable = biometricAvailable(), onUnlock = ::authenticate)
                     } else {
@@ -93,6 +98,7 @@ class MainActivity : FragmentActivity() {
                             visualStyle = visualStyle,
                             brightness = brightness,
                             fontScale = fontScale,
+                            fontFamily = fontFamily,
                             onBiometricChanged = ::requestBiometricSetting,
                             onThemeModeChanged = { mode ->
                                 themeMode = mode
@@ -109,6 +115,10 @@ class MainActivity : FragmentActivity() {
                             onFontScaleChanged = { value ->
                                 fontScale = value
                                 lifecycleScope.launch { preferences.setFontScale(value) }
+                            },
+                            onFontFamilyChanged = { value ->
+                                fontFamily = value
+                                lifecycleScope.launch { preferences.setFontFamily(value) }
                             },
                         )
                     }

@@ -7,6 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.pouriaquant.goldarb.security.AppVisualStyle
+import com.pouriaquant.goldarb.security.AppFontFamily
 
 private val GraphiteDark = darkColorScheme(
     primary = Color(0xFF62D6F4), onPrimary = Color(0xFF002B36),
@@ -78,6 +79,7 @@ private val PaperLight = lightColorScheme(
 fun RasadTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     visualStyle: AppVisualStyle = AppVisualStyle.GRAPHITE,
+    fontFamily: AppFontFamily = AppFontFamily.VAZIRMATN,
     content: @Composable () -> Unit,
 ) {
     val colors = when (visualStyle) {
@@ -85,5 +87,5 @@ fun RasadTheme(
         AppVisualStyle.AURORA -> if (darkTheme) AuroraDark else AuroraLight
         AppVisualStyle.PAPER -> if (darkTheme) PaperDark else PaperLight
     }
-    MaterialTheme(colorScheme = colors, typography = GoldArbTypography, content = content)
+    MaterialTheme(colorScheme = colors, typography = rasadTypography(fontFamily), content = content)
 }
