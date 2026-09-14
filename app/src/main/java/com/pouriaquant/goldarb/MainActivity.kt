@@ -9,12 +9,17 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.pouriaquant.goldarb.security.AppPreferences
+import com.pouriaquant.goldarb.security.AppBrightness
+import com.pouriaquant.goldarb.security.AppFontScale
 import com.pouriaquant.goldarb.security.AppThemeMode
 import com.pouriaquant.goldarb.security.AppVisualStyle
 import com.pouriaquant.goldarb.ui.GoldArbApp
@@ -28,6 +33,8 @@ class MainActivity : FragmentActivity() {
     private var biometricEnabled by mutableStateOf(false)
     private var themeMode by mutableStateOf(AppThemeMode.SYSTEM)
     private var visualStyle by mutableStateOf(AppVisualStyle.GRAPHITE)
+    private var brightness by mutableStateOf(AppBrightness.SYSTEM)
+    private var fontScale by mutableStateOf(AppFontScale.NORMAL)
     private var authenticationRunning = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,8 +48,15 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch {
             preferences.visualStyleFlow.collect { savedStyle -> visualStyle = savedStyle }
         }
+        lifecycleScope.launch {
+            preferences.brightnessFlow.collect { savedBrightness -> brightness = savedBrightness }
+        }
+        lifecycleScope.launch {
+            preferences.fontScaleFlow.collect { savedScale -> fontScale = savedScale }
+        }
         unlocked = !biometricEnabled
         setContent {
+            val deviceDensity = LocalDensity.current
             val darkTheme = when (themeMode) {
                 AppThemeMode.SYSTEM -> isSystemInDarkTheme()
                 AppThemeMode.LIGHT -> false
@@ -53,26 +67,51 @@ class MainActivity : FragmentActivity() {
                     isAppearanceLightStatusBars = !darkTheme
                     isAppearanceLightNavigationBars = !darkTheme
                 }
+                window.attributes = window.attributes.apply {
+                    screenBrightness = when (brightness) {
+                        AppBrightness.SYSTEM -> android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                        AppBrightness.LOW -> 0.35f
+                        AppBrightness.MEDIUM -> 0.65f
+                        AppBrightness.HIGH -> 1.00f
+                    }
+                }
             }
-            RasadTheme(darkTheme = darkTheme, visualStyle = visualStyle) {
-                if (biometricEnabled && !unlocked) {
-                    LockScreen(biometricAvailable = biometricAvailable(), onUnlock = ::authenticate)
-                } else {
-                    GoldArbApp(
-                        biometricAvailable = biometricAvailable(),
-                        biometricEnabled = biometricEnabled,
-                        themeMode = themeMode,
-                        visualStyle = visualStyle,
-                        onBiometricChanged = ::requestBiometricSetting,
-                        onThemeModeChanged = { mode ->
-                            themeMode = mode
-                            lifecycleScope.launch { preferences.setThemeMode(mode) }
-                        },
-                        onVisualStyleChanged = { style ->
-                            visualStyle = style
-                            lifecycleScope.launch { preferences.setVisualStyle(style) }
-                        },
-                    )
+            CompositionLocalProvider(
+                LocalDensity provides Density(
+                    density = deviceDensity.density,
+                    fontScale = deviceDensity.fontScale * fontScale.multiplier,
+                ),
+            ) {
+                RasadTheme(darkTheme = darkTheme, visualStyle = visualStyle) {
+                    if (biometricEnabled && !unlocked) {
+                        LockScreen(biometricAvailable = biometricAvailable(), onUnlock = ::authenticate)
+                    } else {
+                        GoldArbApp(
+                            biometricAvailable = biometricAvailable(),
+                            biometricEnabled = biometricEnabled,
+                            themeMode = themeMode,
+                            visualStyle = visualStyle,
+                            brightness = brightness,
+                            fontScale = fontScale,
+                            onBiometricChanged = ::requestBiometricSetting,
+                            onThemeModeChanged = { mode ->
+                                themeMode = mode
+                                lifecycleScope.launch { preferences.setThemeMode(mode) }
+                            },
+                            onVisualStyleChanged = { style ->
+                                visualStyle = style
+                                lifecycleScope.launch { preferences.setVisualStyle(style) }
+                            },
+                            onBrightnessChanged = { value ->
+                                brightness = value
+                                lifecycleScope.launch { preferences.setBrightness(value) }
+                            },
+                            onFontScaleChanged = { value ->
+                                fontScale = value
+                                lifecycleScope.launch { preferences.setFontScale(value) }
+                            },
+                        )
+                    }
                 }
             }
         }

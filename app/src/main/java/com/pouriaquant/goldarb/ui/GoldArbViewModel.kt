@@ -22,6 +22,8 @@ import com.pouriaquant.goldarb.data.AssetSignal
 import com.pouriaquant.goldarb.data.AssetTrade
 import com.pouriaquant.goldarb.data.AssetPosition
 import com.pouriaquant.goldarb.data.AssetHeartbeat
+import com.pouriaquant.goldarb.data.AssetVenueQuote
+import com.pouriaquant.goldarb.data.ReferencePrice
 import com.pouriaquant.goldarb.security.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,6 +49,8 @@ data class GoldArbUiState(
     val assetTrades: List<AssetTrade> = emptyList(),
     val assetPositions: List<AssetPosition> = emptyList(),
     val assetHeartbeats: List<AssetHeartbeat> = emptyList(),
+    val assetVenueQuotes: List<AssetVenueQuote> = emptyList(),
+    val referencePrices: List<ReferencePrice> = emptyList(),
     val account: AccountUser? = null,
     val accountMessage: String? = null,
 )
@@ -104,6 +108,8 @@ class GoldArbViewModel(
                     assetTrades = snapshot.assetTrades,
                     assetPositions = snapshot.assetPositions,
                     assetHeartbeats = snapshot.assetHeartbeats,
+                    assetVenueQuotes = snapshot.assetVenueQuotes,
+                    referencePrices = snapshot.referencePrices,
                     policy = policy,
                     errorMessage = if (snapshot.quotes.isEmpty()) "هنوز قیمتی دریافت نشده است" else null,
                 )
@@ -116,7 +122,11 @@ class GoldArbViewModel(
     fun setMinimumProfitPercent(percent: Double) {
         val rate = (percent / 100).coerceIn(0.0, 1.0)
         viewModelScope.launch {
-            val token = preferences.sessionToken ?: return@launch
+            val token = preferences.sessionToken
+            if (token == null) {
+                state = state.copy(errorMessage = "برای تغییر آستانه سرور، دسترسی مدیر لازم است")
+                return@launch
+            }
             runCatching { withContext(Dispatchers.IO) { repository.updateMinimumProfitRate(rate, token) } }
                 .onSuccess(::applyStrategyState)
                 .onFailure { state = state.copy(errorMessage = "ذخیره درصد سود روی سرور ناموفق بود") }

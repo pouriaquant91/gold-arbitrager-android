@@ -4,18 +4,25 @@ data class MarketCatalogEntry(val id: String, val name: String, val monogram: St
 
 object MarketCatalog {
     val entries = listOf(
-        "hamrahgold" to "همراه‌گلد", "talanex" to "طلانکس", "goldika" to "گلدیکا",
-        "talasea" to "طلاسی", "milli" to "میلی", "zaryaal" to "زریال گلد",
-        "taline" to "طلاین", "technogold" to "تکنوگلد", "ecogold" to "اکوگلد",
-        "baazar" to "بازار", "goldis" to "گلدیس", "zarafza" to "زرافزا",
-        "talapp" to "طلاپ", "zarminex" to "زرمینکس", "geramino" to "گرامینو",
-        "melligold" to "ملی‌گلد", "zarpay" to "زرپی", "talaavan" to "طلاوان",
-        "abantether" to "آبان‌تتر GoldBox", "invi" to "اینوی", "wallgold" to "وال‌گلد",
-        "talaeesho" to "طلایی‌شو", "zarniv" to "زرنیو", "zaargari" to "زرگری",
-        "motiha" to "موتی‌ها", "tetalla" to "تتلا", "goldenfa" to "گلدنفا",
-        "myshemsh" to "مای‌شمش", "sellonia" to "سلونیا", "dornika" to "درنیکا",
-        "tgju-gold" to "TGJU Gold", "daric" to "داریک", "bazaretala" to "بازارطلا",
-        "digikala-wealth" to "طلای دیجیتال دیجی‌کالا", "talaland" to "طلالند", "torob-gold" to "ترب‌گلد",
+        "hamrahgold" to "همراه‌گلد", "zaryaal" to "زریال گلد", "milli" to "میلی",
+        "technogold" to "تکنوگلد", "goldika" to "گلدیکا", "talasea" to "طلاسی",
+        "taline" to "طلاین", "ecogold" to "اکوگلد", "igolden" to "آی‌گلدن",
+        "zarafza" to "زرافزا", "baazar" to "بازار", "talanex" to "طلانکس",
+        "talaavan" to "طلاوان", "goldis" to "گلدیس", "goldenfa" to "گلدنفا",
+        "geramino" to "گرامینو", "motiha" to "موتی‌ها", "zarpaad" to "زرپاد",
+        "tokeniko" to "توکنیکو", "zarniv" to "زرنیو", "invi" to "اینوی",
+        "melligold" to "ملی‌گلد", "daric" to "داریک", "talapp" to "طلاپ",
+        "wallgold" to "وال‌گلد", "azkisarmayeh" to "ازکی سرمایه",
+        "digikala-wealth" to "طلای دیجیتال دیجی‌کالا", "bazaretala" to "بازارطلا",
+        "myshemsh" to "مای‌شمش", "zarpay" to "زرپی", "zarminex" to "زرمینکس",
+        "goldbaan" to "گلدبان", "nikcoin" to "نیک‌کوین", "abantether" to "آبان‌تتر GoldBox",
+        "zcoinn" to "زکوین", "digizargar" to "دیجی‌زرگر", "zariran" to "زرایران",
+        "talaland" to "طلالند", "atigold" to "آتی‌گلد", "zarbun" to "زربُن",
+        "zaargari" to "زرگری", "talaeesho" to "طلایی‌شو", "geram" to "گرم",
+        "zarbama" to "زرباما", "talajet" to "طلاجت", "tetalla" to "تتلا",
+        "torob-gold" to "ترب‌گلد", "farazgold" to "فرازگلد", "hivagold" to "هیواگلد",
+        "zarinayar" to "زرین‌عیار", "sellonia" to "سلونیا", "dornika" to "درنیکا",
+        "tgju-gold" to "TGJU Gold",
     ).mapIndexed { index, (id, name) ->
         val accents = longArrayOf(0xFF8EB8E7, 0xFF76C9A2, 0xFFF4C862, 0xFFC59670, 0xFFD6B46D)
         MarketCatalogEntry(id, name, name.take(1), accents[index % accents.size])

@@ -36,6 +36,9 @@ class PublicFeedMarketRepository : MarketRepository {
         val calculationRuns = calculationsResult.getOrDefault(emptyList())
         val assetResult = runCatching(::fetchAssetSnapshot)
         val assetSnapshot = assetResult.getOrNull()
+        val referenceResult = runCatching(::fetchReferencePrices)
+        val liveReferences = referenceResult.getOrDefault(emptyList())
+        val liveReferenceAssets = liveReferences.map { it.asset }.toSet()
 
         val byId = quotes.associateBy { it.venueId }
         val completeCatalog = MarketCatalog.entries.map { byId[it.id] ?: MarketCatalog.unavailable(it) }
@@ -53,6 +56,9 @@ class PublicFeedMarketRepository : MarketRepository {
             assetTrades = assetSnapshot?.trades.orEmpty(),
             assetPositions = assetSnapshot?.positions.orEmpty(),
             assetHeartbeats = assetSnapshot?.heartbeats.orEmpty(),
+            assetVenueQuotes = assetSnapshot?.quotes.orEmpty(),
+            referencePrices = liveReferences + assetSnapshot?.references.orEmpty()
+                .filterNot { it.asset in liveReferenceAssets },
         )
     }
 
@@ -69,7 +75,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
+            setRequestProperty("User-Agent", "RASAD-Android/0.17.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -88,7 +94,7 @@ class PublicFeedMarketRepository : MarketRepository {
             doOutput = true
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
+            setRequestProperty("User-Agent", "RASAD-Android/0.17.0")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
         }
         return try {
@@ -106,7 +112,7 @@ class PublicFeedMarketRepository : MarketRepository {
             connectTimeout = 8_000
             readTimeout = 8_000
             setRequestProperty("Accept", "text/html, text/plain")
-            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
+            setRequestProperty("User-Agent", "RASAD-Android/0.17.0")
             instanceFollowRedirects = true
         }
         return try {
@@ -320,6 +326,8 @@ class PublicFeedMarketRepository : MarketRepository {
         val trades: List<AssetTrade>,
         val positions: List<AssetPosition>,
         val heartbeats: List<AssetHeartbeat>,
+        val quotes: List<AssetVenueQuote>,
+        val references: List<ReferencePrice>,
     )
 
     private fun fetchAssetSnapshot(): AssetSnapshot {
@@ -366,7 +374,50 @@ class PublicFeedMarketRepository : MarketRepository {
                 errorCount = row.getInt("error_count"), checkedAt = row.getString("checked_at"),
             )
         }
-        return AssetSnapshot(signals, trades, positions, heartbeats)
+        val quoteRows = payload.optJSONArray("quotes")
+        val quotes = if (quoteRows == null) emptyList() else (0 until quoteRows.length()).map { index ->
+            val row = quoteRows.getJSONObject(index)
+            AssetVenueQuote(
+                asset = row.getString("asset"),
+                venueId = row.getString("venueId"),
+                displayName = row.optString("displayName", row.getString("venueId")),
+                askToman = if (row.isNull("askToman")) null else row.getDouble("askToman"),
+                bidToman = if (row.isNull("bidToman")) null else row.getDouble("bidToman"),
+                unit = row.optString("unit"),
+                sampledAt = row.getString("sampledAt"),
+                executableDepth = row.optBoolean("executableDepth", false),
+            )
+        }
+        val referenceRows = payload.optJSONArray("references")
+        val references = if (referenceRows == null) emptyList() else (0 until referenceRows.length()).map { index ->
+            val row = referenceRows.getJSONObject(index)
+            ReferencePrice(
+                asset = row.getString("asset"),
+                label = row.optString("displayName", row.getString("referenceId")),
+                value = row.getDouble("value"),
+                currency = if (row.optString("unit").startsWith("USD/")) "USD" else "TOMAN",
+                unit = row.optString("unit"),
+                sourceUrl = row.optString("sourceUrl"),
+                fetchedAt = row.getString("observedAt"),
+            )
+        }
+        return AssetSnapshot(signals, trades, positions, heartbeats, quotes, references)
+    }
+
+    private fun fetchReferencePrices(): List<ReferencePrice> {
+        val rows = getJson("$SERVER_BASE_URL/api/reference-prices").optJSONArray("prices") ?: return emptyList()
+        return (0 until rows.length()).map { index ->
+            val row = rows.getJSONObject(index)
+            ReferencePrice(
+                asset = row.getString("asset"),
+                label = row.getString("label"),
+                value = row.getDouble("value"),
+                currency = row.getString("currency"),
+                unit = row.getString("unit"),
+                sourceUrl = row.getString("sourceUrl"),
+                fetchedAt = row.getString("fetchedAt"),
+            )
+        }
     }
 
     private fun parseStrategyState(payload: JSONObject): ServerStrategyState {
@@ -445,7 +496,7 @@ class PublicFeedMarketRepository : MarketRepository {
             requestMethod = "GET"; connectTimeout = 8_000; readTimeout = 8_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
-            setRequestProperty("User-Agent", "RASAD-Android/0.16.0")
+            setRequestProperty("User-Agent", "RASAD-Android/0.17.0")
         }
         return try {
             if (connection.responseCode !in 200..299) null else connection.inputStream.bufferedReader().use {

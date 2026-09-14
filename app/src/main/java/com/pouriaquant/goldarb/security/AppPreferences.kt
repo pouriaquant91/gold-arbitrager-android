@@ -15,10 +15,20 @@ enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 
 enum class AppVisualStyle { GRAPHITE, AURORA, PAPER }
 
+enum class AppBrightness { SYSTEM, LOW, MEDIUM, HIGH }
+
+enum class AppFontScale(val multiplier: Float) {
+    SMALL(0.90f),
+    NORMAL(1.00f),
+    LARGE(1.15f),
+}
+
 private const val DATASTORE_FILE_NAME = "rasad_appearance"
 private const val LEGACY_FILE_NAME = "zararb_preferences"
 private const val KEY_THEME_MODE = "theme_mode"
 private const val KEY_VISUAL_STYLE = "visual_style"
+private const val KEY_BRIGHTNESS = "brightness"
+private const val KEY_FONT_SCALE = "font_scale"
 
 private val Context.appearanceDataStore by preferencesDataStore(
     name = DATASTORE_FILE_NAME,
@@ -28,7 +38,7 @@ private val Context.appearanceDataStore by preferencesDataStore(
             SharedPreferencesMigration(
                 context,
                 LEGACY_FILE_NAME,
-                setOf(KEY_THEME_MODE, KEY_VISUAL_STYLE),
+                setOf(KEY_THEME_MODE, KEY_VISUAL_STYLE, KEY_BRIGHTNESS, KEY_FONT_SCALE),
             ),
         )
     },
@@ -39,6 +49,8 @@ class AppPreferences(context: Context) {
     private val preferences = appContext.getSharedPreferences(LEGACY_FILE_NAME, Context.MODE_PRIVATE)
     private val themeModeKey = stringPreferencesKey(KEY_THEME_MODE)
     private val visualStyleKey = stringPreferencesKey(KEY_VISUAL_STYLE)
+    private val brightnessKey = stringPreferencesKey(KEY_BRIGHTNESS)
+    private val fontScaleKey = stringPreferencesKey(KEY_FONT_SCALE)
 
     val themeModeFlow = appContext.appearanceDataStore.data
         .catch { error ->
@@ -62,12 +74,38 @@ class AppPreferences(context: Context) {
             }
         }
 
+    val brightnessFlow = appContext.appearanceDataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { values ->
+            runCatching { AppBrightness.valueOf(values[brightnessKey].orEmpty()) }
+                .getOrDefault(AppBrightness.SYSTEM)
+        }
+
+    val fontScaleFlow = appContext.appearanceDataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { values ->
+            runCatching { AppFontScale.valueOf(values[fontScaleKey].orEmpty()) }
+                .getOrDefault(AppFontScale.NORMAL)
+        }
+
     suspend fun setThemeMode(value: AppThemeMode) {
         appContext.appearanceDataStore.edit { values -> values[themeModeKey] = value.name }
     }
 
     suspend fun setVisualStyle(value: AppVisualStyle) {
         appContext.appearanceDataStore.edit { values -> values[visualStyleKey] = value.name }
+    }
+
+    suspend fun setBrightness(value: AppBrightness) {
+        appContext.appearanceDataStore.edit { values -> values[brightnessKey] = value.name }
+    }
+
+    suspend fun setFontScale(value: AppFontScale) {
+        appContext.appearanceDataStore.edit { values -> values[fontScaleKey] = value.name }
     }
 
     var biometricLockEnabled: Boolean

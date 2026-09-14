@@ -87,6 +87,29 @@ data class MarketSnapshot(
     val assetTrades: List<AssetTrade> = emptyList(),
     val assetPositions: List<AssetPosition> = emptyList(),
     val assetHeartbeats: List<AssetHeartbeat> = emptyList(),
+    val assetVenueQuotes: List<AssetVenueQuote> = emptyList(),
+    val referencePrices: List<ReferencePrice> = emptyList(),
+)
+
+data class AssetVenueQuote(
+    val asset: String,
+    val venueId: String,
+    val displayName: String,
+    val askToman: Double?,
+    val bidToman: Double?,
+    val unit: String,
+    val sampledAt: String,
+    val executableDepth: Boolean,
+)
+
+data class ReferencePrice(
+    val asset: String,
+    val label: String,
+    val value: Double,
+    val currency: String,
+    val unit: String,
+    val sourceUrl: String,
+    val fetchedAt: String,
 )
 
 data class AssetSignal(
