@@ -1,17 +1,20 @@
 {
-  "schemaVersion": 7,
-  "updatedAt": "2026-09-14T19:30:00Z",
+  "schemaVersion": 8,
+  "updatedAt": "2026-09-15T18:00:00Z",
   "productName": "RASAD",
   "strategy": {
     "minimumNetProfitRate": 0.005,
     "minimumNetProfitBasis": "lower-leg-notional",
     "minimumNetProfitScope": "per-order",
     "initialTomanBalancePerVenue": 50000000,
-    "inventoryStateVersion": 1,
+    "inventoryStateVersion": 2,
     "stateStorage": "server-d1",
     "stateEndpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/strategy-state",
     "stateWorkspace": "shared-strategy-calculation",
     "screeningQuantitiesGram": [0.2, 1, 5, 10],
+    "sizingMode": "position-aware-dynamic",
+    "routeCompaction": "one-practical-size-per-direction",
+    "executionLifecycle": ["identified", "buy-completed", "sell-completed", "closed", "profit-recorded"],
     "feeVatRate": 0.1,
     "mode": "automatic-formula-calculation",
     "userTradingEnabled": false,
@@ -42,14 +45,15 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "androidVersion": "0.19.0",
-    "pwaVersion": "1.3.1",
-    "iosVersion": "0.2.1"
+    "coreVersion": "1.4.0",
+    "androidVersion": "0.20.0",
+    "pwaVersion": "1.4.0",
+    "iosVersion": "0.3.0"
   },
   "multiAsset": {
     "markets": ["gold", "silver", "copper", "usdt"],
-    "monitorIntervalMinutes": 5,
-    "schedulerSemantics": "github-actions-best-effort-watchdog",
+    "monitorIntervalMinutes": 1,
+    "schedulerSemantics": "systemd-continuous-60s-with-github-actions-watchdog",
     "signalMode": "server-formula",
     "tradeMode": "server-paper-ledger",
     "usdtInitialTomanPerVenue": 100000000,

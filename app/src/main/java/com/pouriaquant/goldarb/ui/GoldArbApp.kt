@@ -147,7 +147,7 @@ private enum class AssetPage(
 private data class DisplaySignal(
     val id: String, val asset: String, val buyVenueId: String, val sellVenueId: String,
     val quantity: Double, val unit: String, val buyPrice: Double, val sellPrice: Double,
-    val totalCosts: Double, val slippage: Double?, val netProfit: Double,
+    val totalCosts: Double, val slippage: Double?, val netProfit: Double, val realizedProfit: Double?,
     val decision: String, val executionStatus: String, val sampledAt: String,
 )
 
@@ -310,7 +310,7 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val allSignals = if (page == AssetPage.GOLD) state.calculationRuns.map {
-        DisplaySignal(it.id, "gold", it.buyVenueId, it.sellVenueId, it.quantityGram, "گرم", it.buyPriceToman, it.sellPriceToman, it.totalCostsToman, (it.buyPriceToman + it.sellPriceToman) * it.quantityGram * it.executionReserveRate, it.netProfitToman, it.decision, it.executionStatus, it.sampledAt)
+        DisplaySignal(it.id, "gold", it.buyVenueId, it.sellVenueId, it.quantityGram, "گرم", it.buyPriceToman, it.sellPriceToman, it.totalCostsToman, (it.buyPriceToman + it.sellPriceToman) * it.quantityGram * it.executionReserveRate, it.netProfitToman, it.realizedProfitToman, it.decision, it.executionStatus, it.sampledAt)
     } else state.assetSignals.filter { it.asset == page.key }.map(AssetSignal::toDisplay)
     val signals = allSignals
         .filter { it.netProfit > 0.0 }
@@ -433,7 +433,7 @@ private fun buildVenuePrices(
     }.sortedWith(compareBy({ it.ask == null && it.bid == null && it.last == null }, { it.name }))
 }
 
-private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellVenueId, quantity, unit, buyPriceToman, sellPriceToman, totalCostsToman, slippageToman, netProfitToman, decision, executionStatus, sampledAt)
+private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellVenueId, quantity, unit, buyPriceToman, sellPriceToman, totalCostsToman, slippageToman, netProfitToman, realizedProfitToman, decision, executionStatus, sampledAt)
 
 @Composable private fun HeroCard(page: AssetPage, updatedAt: String?) { Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = page.color.copy(alpha = .12f)), modifier = Modifier.border(1.dp, page.color.copy(alpha=.3f), RoundedCornerShape(28.dp))) { Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("بازار ${page.label}", color = page.color, fontWeight = FontWeight.Bold); Text(page.description, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black); Text(updatedAt ?: "در انتظار اولین پایش", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }; ElementBadge(page.symbol, page.color, 88) } } }
 
@@ -449,7 +449,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     var peak = 0.0
     var drawdown = 0.0
     signals.filter { it.executionStatus == "buy-and-sell" }.sortedBy { it.sampledAt }.forEach {
-        cumulative += it.netProfit
+        cumulative += it.realizedProfit ?: it.netProfit
         peak = maxOf(peak, cumulative)
         drawdown = maxOf(drawdown, peak - cumulative)
     }
@@ -682,7 +682,7 @@ private fun OpportunityBreakdown(signal: DisplaySignal, color: Color) {
         "اسلیپیج" to (signal.slippage?.let { "${money(it)} · ${percent(rate(it))}" } ?: "از رکورد بعدی ثبت می‌شود"),
         "سود خالص قابل اجرا" to "${money(signal.netProfit)} · ${percent(rate(signal.netProfit))}",
         "سرمایه درگیر" to money(capital),
-        "سود نهایی معامله" to "${money(signal.netProfit)} · ${percent(rate(signal.netProfit))}",
+        "سود نهایی معامله" to (signal.realizedProfit?.let { "${money(it)} · ${percent(rate(it))}" } ?: "هنوز ثبت نشده"),
     )
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         metrics.forEach { (label, value) ->
@@ -698,7 +698,7 @@ private fun OpportunityBreakdown(signal: DisplaySignal, color: Color) {
             "خرید انجام شد" to (status == "buy" || status == "buy-and-sell"),
             "فروش انجام شد" to (status == "sell" || status == "buy-and-sell"),
             "معامله بسته شد" to (status == "buy-and-sell"),
-            "سود ثبت شد" to (status == "buy-and-sell"),
+            "سود ثبت شد" to (signal.realizedProfit != null),
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             items(steps) { (label, done) ->
