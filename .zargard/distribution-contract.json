@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 9,
-  "updatedAt": "2026-09-19T18:00:00Z",
+  "schemaVersion": 10,
+  "updatedAt": "2026-09-19T11:35:00Z",
   "productName": "RASAD",
   "strategy": {
     "minimumNetProfitRate": 0.005,
@@ -45,13 +45,13 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "coreVersion": "1.4.1",
-    "androidVersion": "0.20.1",
-    "pwaVersion": "1.4.1",
-    "iosVersion": "0.3.1"
+    "coreVersion": "1.4.2",
+    "androidVersion": "0.20.2",
+    "pwaVersion": "1.4.2",
+    "iosVersion": "0.3.2"
   },
   "managementPresentation": {
-    "profitMetric": "realized-positive-only",
+    "profitMetric": "closed-trade-realized-positive-only",
     "downsideMetric": "investment-risk",
     "negativeValuesVisible": false,
     "rawLedgerPreserved": true

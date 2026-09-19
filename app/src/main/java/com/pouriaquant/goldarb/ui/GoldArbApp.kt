@@ -159,7 +159,18 @@ private data class KpiPosition(
     val lastPrice: Double?,
 )
 
-private data class KpiMetric(val label: String, val value: String, val positive: Boolean = false, val warning: Boolean = false)
+private data class KpiMetric(val label: String, val value: String, val note: String, val positive: Boolean = false, val warning: Boolean = false)
+
+private data class DisplayTrade(
+    val id: String,
+    val signalId: String,
+    val venueId: String,
+    val side: String,
+    val quantity: Double,
+    val unit: String,
+    val totalToman: Double,
+    val occurredAt: String,
+)
 
 private data class VenuePriceItem(
     val id: String,
@@ -316,6 +327,11 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
         .filter { it.netProfit > 0.0 }
         .sortedByDescending { it.sampledAt }
     val trades = state.assetTrades.filter { it.asset == page.key }
+    val displayTrades = if (page == AssetPage.GOLD) state.trades.map {
+        DisplayTrade(it.id, it.id.substringBeforeLast(':'), it.venueId, it.side, it.quantityGram, "گرم", it.totalToman, it.occurredAt)
+    } else trades.map {
+        DisplayTrade(it.id, it.signalId, it.venueId, it.side, it.quantity, it.unit, it.totalToman, it.occurredAt)
+    }
     val positions = state.assetPositions.filter { it.asset == page.key }
     val kpiPositions = if (page == AssetPage.GOLD) state.positions.values.map {
         KpiPosition(it.initialTomanBalance, it.initialGoldBalanceGram, it.tomanBalance, it.goldBalanceGram, it.latestPriceToman)
@@ -326,7 +342,6 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
     val referencePrice = state.referencePrices.firstOrNull { it.asset == page.key }
     val usdReference = state.referencePrices.firstOrNull { it.asset == "usd" }
     val best = signals.firstOrNull()
-    val executed = signals.firstOrNull { it.executionStatus != "calculated" }
     val venueNames = priceItems.associate { it.id to it.name }
     val venueName: (String) -> String = { id -> venueNames[id] ?: id }
     Box(Modifier.fillMaxSize()) {
@@ -339,7 +354,7 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
         item { HeroCard(page, if (page == AssetPage.GOLD) state.serverUpdatedAt else state.assetHeartbeats.firstOrNull { it.asset == page.key }?.checkedAt) }
         item { KpiDashboard(page, signals, kpiPositions) }
         item { SignalCard(page, best, venueName) }
-        item { PaperTradeCard(page, executed, venueName) }
+        item { PaperTradeCard(page, displayTrades, venueName) }
         item {
             ReferenceMarketCard(page, referencePrice, usdReference)
         }
@@ -455,15 +470,17 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     }
     drawdown = maxOf(drawdown, maxOf(0.0, -profitLoss))
     val drawdownRate = if (tradingCapital > 0) drawdown / tradingCapital else 0.0
-    val managementProfit = maxOf(0.0, profitLoss)
+    val completed = signals.filter { it.executionStatus == "buy-and-sell" }
+    val realizedProfit = completed.sumOf { it.realizedProfit ?: it.netProfit }
+    val managementProfit = maxOf(0.0, realizedProfit)
     val metrics = listOf(
-        KpiMetric("سرمایه معاملاتی", money(tradingCapital)),
-        KpiMetric("سرمایه درگیر", money(engagedCapital)),
-        KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size)),
-        KpiMetric("فرصت قابل اجرا", formatter.format(accepted), positive = true),
-        KpiMetric("میانگین سود خالص", money(average), positive = average > 0),
-        KpiMetric("سود ثبت‌شده", money(managementProfit), positive = true),
-        KpiMetric("ریسک سرمایه‌گذاری", "${money(drawdown)} · ${percent(drawdownRate)}"),
+        KpiMetric("سرمایه معاملاتی", money(tradingCapital), "بودجه اولیه دفتر"),
+        KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
+        KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "همه سیگنال‌های مثبت"),
+        KpiMetric("فرصت قابل اجرا", formatter.format(accepted), "بالاتر از آستانه", positive = true),
+        KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
+        KpiMetric("سود معاملات بسته‌شده", if (completed.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completed.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completed.size)} چرخه کامل خرید و فروش", positive = true),
+        KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
     )
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -482,6 +499,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                             Text(metric.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(metric.value, fontWeight = FontWeight.Bold, color = when { metric.warning -> Negative; metric.positive -> Positive; else -> page.color })
+                            Text(metric.note, fontSize = 10.sp, lineHeight = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -712,7 +730,23 @@ private fun OpportunityBreakdown(signal: DisplaySignal, color: Color) {
 }
 @Composable private fun RouteBox(label:String,venue:String,price:Double,color:Color,modifier:Modifier){Column(modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(14.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){Text(label,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(venue,fontWeight=FontWeight.Bold);Text(money(price),fontSize=12.sp,color=color)}}
 
-@Composable private fun PaperTradeCard(page:AssetPage, signal:DisplaySignal?, venueName:(String)->String){Card(shape=RoundedCornerShape(24.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("معامله فرضی سرور",color=page.color,fontSize=12.sp);Text(if(signal==null)"معامله‌ای انجام نشده" else "در دفتر دارایی اعمال شد",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)};Icon(Icons.Rounded.Wallet,null,tint=page.color)};if(signal==null) Text("پس از عبور سود خالص از آستانه و کافی بودن موجودی هر دو طرف، معامله فرضی ثبت می‌شود.",color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=24.sp) else {Text("${venueName(signal.buyVenueId)} ↔ ${venueName(signal.sellVenueId)}",fontWeight=FontWeight.Bold);Text("${formatter.format(signal.quantity)} ${signal.unit} خرید و فروش فرضی شد.",color=MaterialTheme.colorScheme.onSurfaceVariant);Text(money(signal.netProfit),color=Positive,fontWeight=FontWeight.Black)}}}}
+@Composable private fun PaperTradeCard(page:AssetPage, trades:List<DisplayTrade>, venueName:(String)->String){
+    val latestGroup=trades.groupBy { it.signalId }.values.maxByOrNull { group -> group.maxOf { it.occurredAt } }
+    val buy=latestGroup?.firstOrNull { it.side=="buy" }
+    val sell=latestGroup?.firstOrNull { it.side=="sell" }
+    val completed=buy!=null&&sell!=null
+    Card(shape=RoundedCornerShape(24.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){
+        Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("معامله فرضی سرور",color=page.color,fontSize=12.sp);Text(when{latestGroup==null->"هنوز سفارشی ثبت نشده";completed->"چرخه خرید و فروش بسته شد";buy!=null->"خرید ثبت شد؛ فروش هنوز باز است";else->"فروش ثبت شد؛ خرید متناظر موجود نیست"},style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)};Icon(Icons.Rounded.Wallet,null,tint=page.color)}
+            if(latestGroup==null) Text("سرور فقط پس از عبور سود خالص از آستانه و کافی بودن موجودی، سفارش فرضی را در دفتر ثبت می‌کند.",color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=24.sp) else {
+                Text("${buy?.let { venueName(it.venueId) } ?: "—"} ↔ ${sell?.let { venueName(it.venueId) } ?: "در انتظار فروش"}",fontWeight=FontWeight.Bold)
+                val leg=buy?:sell!!
+                Text(if(completed)"${formatter.format(buy!!.quantity)} ${buy.unit} خرید و فروش فرضی شد." else "${formatter.format(leg.quantity)} ${leg.unit} ${if(leg.side=="buy")"خرید" else "فروش"} ثبت شده؛ تا بسته‌شدن سمت مقابل سود تحقق‌یافته نداریم.",color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=22.sp)
+                if(completed) Text(money(sell!!.totalToman-buy!!.totalToman),color=Positive,fontWeight=FontWeight.Black)
+            }
+        }
+    }
+}
 
 @Composable private fun TabButton(label:String,selected:Boolean,color:Color,modifier:Modifier,onClick:()->Unit){Surface(modifier=modifier.semantics { contentDescription = label; this.selected = selected }.clickable(onClick=onClick),shape=RoundedCornerShape(11.dp),color=if(selected)color.copy(alpha=.18f) else Color.Transparent){Text(label,modifier=Modifier.padding(vertical=11.dp),textAlign=TextAlign.Center,color=if(selected)color else MaterialTheme.colorScheme.onSurfaceVariant,fontSize=12.sp,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal)}}
 @Composable private fun HistorySignalRow(signal:DisplaySignal,venueName:(String)->String,color:Color){Card(shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)){Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(11.dp)){Box(Modifier.size(9.dp).clip(CircleShape).background(if(signal.decision=="accepted")Positive else Caution));Column(Modifier.weight(1f)){Text("${venueName(signal.buyVenueId)} ← ${venueName(signal.sellVenueId)}",fontWeight=FontWeight.Bold);Text(signal.sampledAt,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)};Column(horizontalAlignment=Alignment.End){Text(money(signal.netProfit),color=Positive,fontWeight=FontWeight.Bold);Text(if(signal.executionStatus=="buy-and-sell")"اجرا در دفتر" else "سیگنال مثبت",fontSize=11.sp,color=color)}}}}
