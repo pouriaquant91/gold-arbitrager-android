@@ -455,14 +455,15 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     }
     drawdown = maxOf(drawdown, maxOf(0.0, -profitLoss))
     val drawdownRate = if (tradingCapital > 0) drawdown / tradingCapital else 0.0
+    val managementProfit = maxOf(0.0, profitLoss)
     val metrics = listOf(
         KpiMetric("سرمایه معاملاتی", money(tradingCapital)),
         KpiMetric("سرمایه درگیر", money(engagedCapital)),
         KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size)),
         KpiMetric("فرصت قابل اجرا", formatter.format(accepted), positive = true),
         KpiMetric("میانگین سود خالص", money(average), positive = average > 0),
-        KpiMetric("سود و زیان", money(profitLoss), positive = profitLoss >= 0, warning = profitLoss < 0),
-        KpiMetric("بیشترین افت سرمایه", "${money(drawdown)} · ${percent(drawdownRate)}", warning = drawdown > 0),
+        KpiMetric("سود ثبت‌شده", money(managementProfit), positive = true),
+        KpiMetric("ریسک سرمایه‌گذاری", "${money(drawdown)} · ${percent(drawdownRate)}"),
     )
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
