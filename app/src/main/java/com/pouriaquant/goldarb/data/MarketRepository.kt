@@ -38,6 +38,7 @@ class PublicFeedMarketRepository : MarketRepository {
         val assetSnapshot = assetResult.getOrNull()
         val referenceResult = runCatching(::fetchReferencePrices)
         val liveReferences = referenceResult.getOrDefault(emptyList())
+        val fundResult = runCatching(::fetchFundPairs)
         val liveReferenceAssets = liveReferences.map { it.asset }.toSet()
 
         val byId = quotes.associateBy { it.venueId }
@@ -59,6 +60,7 @@ class PublicFeedMarketRepository : MarketRepository {
             assetVenueQuotes = assetSnapshot?.quotes.orEmpty(),
             referencePrices = liveReferences + assetSnapshot?.references.orEmpty()
                 .filterNot { it.asset in liveReferenceAssets },
+            fundPairs = fundResult.getOrNull(),
         )
     }
 
@@ -350,6 +352,7 @@ class PublicFeedMarketRepository : MarketRepository {
                 minimumRequiredProfitToman = row.getDouble("minimum_required_profit_toman"),
                 decision = row.getString("decision"), executionStatus = row.getString("execution_status"),
                 sampledAt = row.getString("sampled_at"),
+                costPolicy = row.optString("cost_policy").ifBlank { null },
             )
         }
         val tradeRows = payload.optJSONArray("trades")
@@ -424,6 +427,28 @@ class PublicFeedMarketRepository : MarketRepository {
                 fetchedAt = row.getString("fetchedAt"),
             )
         }
+    }
+
+    private fun fetchFundPairs(): FundPairReport {
+        val payload = getJson("$SERVER_BASE_URL/api/fund-pairs")
+        require(payload.getInt("schemaVersion") == 1 && payload.getString("kind") == "observation-only-not-trades")
+        val rows = payload.getJSONArray("pairs")
+        require(rows.length() == 13)
+        val pairs = (0 until rows.length()).map { index ->
+            val row = rows.getJSONObject(index)
+            val latest = row.optJSONObject("latest")?.let { item ->
+                FundPairObservation(
+                    sampledAt = item.getString("sampled_at"),
+                    status = item.getString("status"),
+                    screenPct = if (item.isNull("screen_pct")) null else item.getDouble("screen_pct"),
+                    sellFund = item.optString("sell_fund").takeIf(String::isNotBlank),
+                    buyFund = item.optString("buy_fund").takeIf(String::isNotBlank),
+                )
+            }
+            FundPairItem(row.getInt("id"), row.getInt("rank"), row.getString("a"), row.getString("b"), latest)
+        }
+        return FundPairReport(payload.optJSONObject("state")?.optString("checked_at"), pairs, true,
+            payload.optJSONObject("summary")?.optInt("valid_days") ?: 0, payload.optInt("targetValidDays", 3))
     }
 
     private fun parseStrategyState(payload: JSONObject): ServerStrategyState {

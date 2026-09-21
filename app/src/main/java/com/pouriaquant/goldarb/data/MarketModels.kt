@@ -89,6 +89,31 @@ data class MarketSnapshot(
     val assetHeartbeats: List<AssetHeartbeat> = emptyList(),
     val assetVenueQuotes: List<AssetVenueQuote> = emptyList(),
     val referencePrices: List<ReferencePrice> = emptyList(),
+    val fundPairs: FundPairReport? = null,
+)
+
+data class FundPairReport(
+    val checkedAt: String?,
+    val pairs: List<FundPairItem>,
+    val available: Boolean,
+    val validDays: Int,
+    val targetValidDays: Int,
+)
+
+data class FundPairItem(
+    val id: Int,
+    val rank: Int,
+    val a: String,
+    val b: String,
+    val latest: FundPairObservation?,
+)
+
+data class FundPairObservation(
+    val sampledAt: String,
+    val status: String,
+    val screenPct: Double?,
+    val sellFund: String?,
+    val buyFund: String?,
 )
 
 data class AssetVenueQuote(
@@ -130,6 +155,7 @@ data class AssetSignal(
     val decision: String,
     val executionStatus: String,
     val sampledAt: String,
+    val costPolicy: String? = null,
 )
 
 data class AssetTrade(

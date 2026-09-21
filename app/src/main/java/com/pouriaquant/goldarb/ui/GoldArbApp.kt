@@ -105,6 +105,7 @@ import com.pouriaquant.goldarb.data.AssetPosition
 import com.pouriaquant.goldarb.data.AssetSignal
 import com.pouriaquant.goldarb.data.AssetTrade
 import com.pouriaquant.goldarb.data.ReferencePrice
+import com.pouriaquant.goldarb.data.FundPairReport
 import com.pouriaquant.goldarb.data.MarketCatalog
 import com.pouriaquant.goldarb.data.QuoteQuality
 import com.pouriaquant.goldarb.security.AppBrightness
@@ -116,6 +117,8 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val Gold = Color(0xFFE9B949)
@@ -126,6 +129,8 @@ private val Positive = Color(0xFF48D7A2)
 private val Negative = Color(0xFFFF7D77)
 private val Caution = Color(0xFFF4C862)
 private val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("fa-IR"))
+private val fundTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm", Locale.forLanguageTag("fa-IR")).withZone(ZoneId.of("Asia/Tehran"))
+private fun formatFundTime(value: String?): String = value?.let { runCatching { fundTimeFormatter.format(Instant.parse(it)) }.getOrNull() } ?: "هنوز ثبت نشده"
 
 private enum class AssetPage(
     val key: String,
@@ -141,6 +146,7 @@ private enum class AssetPage(
     SILVER("silver", "نقره", "Ag", "نقره ۹۹۹", Silver, listOf("talanex-silver" to "طلانکس نقره", "noghresea-silver" to "نقره‌سی · پژوهشی", "iran-silver" to "بازار تخصصی نقره ایران", "silver-store" to "فروشگاه‌های شمش نقره", "ime-silver" to "بورس کالای ایران", "zarminex-silver" to "زرین‌مکس", "tehran-silver" to "بازار نقره تهران"), "tgju-silver", "TGJU نقره"),
     COPPER("copper", "مس", "Cu", "مس کاتد", Copper, listOf("meschi-copper" to "مس‌چی · پژوهشی", "ime-copper" to "بورس کالای ایران", "lme-copper" to "بورس فلزات لندن", "ahanonline-copper" to "آهن آنلاین", "ahanprice-copper" to "آهن پرایس", "markazeahan-copper" to "مرکزآهن", "iranmetals-copper" to "بازار فلزات ایران"), "tgju-copper", "TGJU مس"),
     USDT("usdt", "تتر", "₮", "USDT / تومان", Tether, listOf("wallex" to "والکس", "tabdeal" to "تبدیل", "exir" to "اکسیر", "raastin" to "راستین", "ramzinex" to "رمزینکس", "ompfinex" to "اوام‌پی‌فینکس", "nobitex" to "نوبیتکس", "sarrafex" to "صرافکس", "bitpin" to "بیت‌پین", "tetherland" to "تترلند", "bit24" to "بیت۲۴", "aban-tether" to "آبان‌تتر", "ok-exchange" to "اوکی‌اکسچنج", "arzplus" to "ارزپلاس", "toobit-fa" to "توبیت فارسی", "sarmayex" to "سرمایکس", "excoino" to "اکسکوینو", "arzpa" to "ارزپا", "farhad-exchange" to "فرهاد اکسچنج"), "tgju-usdt", "TGJU تتر"),
+    FUND_PAIRS("fund-pairs", "جفت‌صندوق‌های طلا", "ETF", "پایش پژوهشی ۱۳ جفت", Gold, emptyList(), "", ""),
     SETTINGS("settings", "تنظیمات", "⚙", "ظاهر و امنیت دستگاه", Color(0xFF8EB8E7), emptyList(), "", ""),
 }
 
@@ -148,7 +154,7 @@ private data class DisplaySignal(
     val id: String, val asset: String, val buyVenueId: String, val sellVenueId: String,
     val quantity: Double, val unit: String, val buyPrice: Double, val sellPrice: Double,
     val totalCosts: Double, val slippage: Double?, val netProfit: Double, val realizedProfit: Double?,
-    val decision: String, val executionStatus: String, val sampledAt: String,
+    val decision: String, val executionStatus: String, val sampledAt: String, val costPolicy: String? = null,
 )
 
 private data class KpiPosition(
@@ -272,10 +278,12 @@ fun GoldArbApp(
                         },
                         actions = {
                             StatusPill(
-                                connected = state.serverConnected,
+                                connected = if (page == AssetPage.FUND_PAIRS) state.fundPairs != null else state.serverConnected,
                                 loading = state.isLoading,
                                 reportUpdatedAt = state.receivedAt,
-                                updatedAt = if (page == AssetPage.GOLD || page == AssetPage.SETTINGS) {
+                                updatedAt = if (page == AssetPage.FUND_PAIRS) {
+                                    state.fundPairs?.checkedAt
+                                } else if (page == AssetPage.GOLD || page == AssetPage.SETTINGS) {
                                     state.serverUpdatedAt
                                 } else {
                                     state.assetHeartbeats.firstOrNull { it.asset == page.key }?.checkedAt
@@ -309,9 +317,48 @@ fun GoldArbApp(
                     onFontFamilyChanged = onFontFamilyChanged,
                     onMinimumProfitPercentChanged = viewModel::setMinimumProfitPercent,
                 )
+                else if (page == AssetPage.FUND_PAIRS) FundPairsPage(state.fundPairs, padding)
                 else AssetMarketPage(page, state, padding)
             }
         }
+    }
+}
+
+@Composable
+private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val checkedAt = report?.checkedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+    val fresh = checkedAt != null && Duration.between(checkedAt, Instant.now()).toMinutes() in 0..19
+    Box(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Text("۱۳ جفت‌صندوق طلا", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text("پایش پژوهشی دفتر سفارش؛ بدون سفارش واقعی یا سود ثبت‌شده.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("روزهای دادهٔ معتبر: ${report?.validDays ?: 0} از ${report?.targetValidDays ?: 3}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (report == null) "گزارش سرور در دسترس نیست" else if (fresh) "آخرین بررسی سرور: ${formatFundTime(report.checkedAt)}" else "در انتظار دادهٔ تازه از سرور", color = if (fresh) Positive else Caution)
+                    }
+                }
+            }
+            if (report != null) items(report.pairs, key = { it.id }) { pair ->
+                val observation = pair.latest
+                val sampledAt = observation?.sampledAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                val current = fresh && sampledAt != null && Duration.between(sampledAt, Instant.now()).toMinutes() in 0..19
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text("اولویت ${pair.rank} · ${pair.a} ↔ ${pair.b}", fontWeight = FontWeight.Bold)
+                        Text(if (current && observation?.status == "observed" && (observation.screenPct ?: 0.0) > 0.0) "اختلاف نسبی مشاهده‌شده: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪" else if (observation == null) "هنوز مشاهده‌ای ثبت نشده" else if (observation.status == "blocked") "دادهٔ معتبر برای سنجش این جفت کافی نبود" else "اختلاف مثبتِ تازه و قابل بررسی ندارد")
+                        Text("معاملهٔ فرضی ثبت نشده${observation?.sampledAt?.let { " · آخرین نمونه: ${formatFundTime(it)}" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+        if (listState.firstVisibleItemIndex > 1) SmallFloatingActionButton(
+            onClick = { scope.launch { listState.animateScrollToItem(0) } },
+            modifier = Modifier.align(Alignment.BottomStart).padding(18.dp),
+        ) { Icon(Icons.Rounded.ArrowUpward, "بازگشت به ابتدای صفحه") }
     }
 }
 
@@ -448,7 +495,7 @@ private fun buildVenuePrices(
     }.sortedWith(compareBy({ it.ask == null && it.bid == null && it.last == null }, { it.name }))
 }
 
-private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellVenueId, quantity, unit, buyPriceToman, sellPriceToman, totalCostsToman, slippageToman, netProfitToman, realizedProfitToman, decision, executionStatus, sampledAt)
+private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellVenueId, quantity, unit, buyPriceToman, sellPriceToman, totalCostsToman, slippageToman, netProfitToman, realizedProfitToman, decision, executionStatus, sampledAt, costPolicy)
 
 @Composable private fun HeroCard(page: AssetPage, updatedAt: String?) { Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = page.color.copy(alpha = .12f)), modifier = Modifier.border(1.dp, page.color.copy(alpha=.3f), RoundedCornerShape(28.dp))) { Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("بازار ${page.label}", color = page.color, fontWeight = FontWeight.Bold); Text(page.description, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black); Text(updatedAt ?: "در انتظار اولین پایش", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }; ElementBadge(page.symbol, page.color, 88) } } }
 
@@ -457,7 +504,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     val tradingCapital = positions.sumOf { it.initialToman + it.initialAsset * (it.lastPrice ?: 0.0) }
     val currentEquity = positions.sumOf { it.toman + it.asset * (it.lastPrice ?: 0.0) }
     val engagedCapital = positions.sumOf { maxOf(0.0, it.asset * (it.lastPrice ?: 0.0)) }
-    val accepted = signals.count { it.decision == "accepted" }
+    val accepted = signals.count { it.decision == "accepted" && it.costPolicy != "legacy-repriced" }
     val average = signals.map { it.netProfit }.average().takeIf { !it.isNaN() } ?: 0.0
     val profitLoss = currentEquity - tradingCapital
     var cumulative = 0.0
@@ -477,7 +524,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
         KpiMetric("سرمایه معاملاتی", money(tradingCapital), "بودجه اولیه دفتر"),
         KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
         KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "همه سیگنال‌های مثبت"),
-        KpiMetric("فرصت قابل اجرا", formatter.format(accepted), "بالاتر از آستانه", positive = true),
+        KpiMetric("فرصت بالای آستانه", formatter.format(accepted), "بدون تضمین موجودی و اجرا", positive = true),
         KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
         KpiMetric("سود معاملات بسته‌شده", if (completed.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completed.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completed.size)} چرخه کامل خرید و فروش", positive = true),
         KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
@@ -655,7 +702,7 @@ private fun SignalCard(page: AssetPage, signal: DisplaySignal?, venueName: (Stri
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("سیگنال مثبت آخر", color = page.color, fontSize = 12.sp)
+                    Text(if (signal?.costPolicy == "legacy-repriced") "فرصت قدیمی بازسنجی‌شده" else "سیگنال مثبت آخر", color = page.color, fontSize = 12.sp)
                     Text(if (signal == null) "فعلاً سیگنال مثبتی نداریم" else "${venueName(signal.buyVenueId)} ← ${venueName(signal.sellVenueId)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
                 Icon(Icons.Rounded.Analytics, null, tint = page.color)
@@ -669,7 +716,7 @@ private fun SignalCard(page: AssetPage, signal: DisplaySignal?, venueName: (Stri
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = if (signal.decision == "accepted") Positive.copy(alpha = .14f) else Caution.copy(alpha = .14f), shape = RoundedCornerShape(999.dp)) {
-                        Text(if (signal.decision == "accepted") "قابل معامله فرضی" else "مثبت، زیر آستانه معامله", color = if (signal.decision == "accepted") Positive else Caution, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), fontSize = 12.sp)
+                        Text(if (signal.costPolicy == "legacy-repriced") "مدل قدیمی؛ اجرای جدید نیست" else if (signal.decision == "accepted") "بالای آستانه؛ موجودی باید بررسی شود" else "مثبت، زیر آستانه معامله", color = if (signal.decision == "accepted" && signal.costPolicy != "legacy-repriced") Positive else Caution, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), fontSize = 12.sp)
                     }
                     Spacer(Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End) { Text("سود خالص", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(money(signal.netProfit), fontWeight = FontWeight.Black, color = Positive) }

@@ -24,6 +24,7 @@ import com.pouriaquant.goldarb.data.AssetPosition
 import com.pouriaquant.goldarb.data.AssetHeartbeat
 import com.pouriaquant.goldarb.data.AssetVenueQuote
 import com.pouriaquant.goldarb.data.ReferencePrice
+import com.pouriaquant.goldarb.data.FundPairReport
 import com.pouriaquant.goldarb.security.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,6 +52,7 @@ data class GoldArbUiState(
     val assetHeartbeats: List<AssetHeartbeat> = emptyList(),
     val assetVenueQuotes: List<AssetVenueQuote> = emptyList(),
     val referencePrices: List<ReferencePrice> = emptyList(),
+    val fundPairs: FundPairReport? = null,
     val account: AccountUser? = null,
     val accountMessage: String? = null,
 )
@@ -110,6 +112,7 @@ class GoldArbViewModel(
                     assetHeartbeats = snapshot.assetHeartbeats,
                     assetVenueQuotes = snapshot.assetVenueQuotes,
                     referencePrices = snapshot.referencePrices,
+                    fundPairs = snapshot.fundPairs,
                     policy = policy,
                     errorMessage = if (snapshot.quotes.isEmpty()) "هنوز قیمتی دریافت نشده است" else null,
                 )
