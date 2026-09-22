@@ -155,6 +155,7 @@ private data class DisplaySignal(
     val quantity: Double, val unit: String, val buyPrice: Double, val sellPrice: Double,
     val totalCosts: Double, val slippage: Double?, val netProfit: Double, val realizedProfit: Double?,
     val decision: String, val executionStatus: String, val sampledAt: String, val costPolicy: String? = null,
+    val executionEligible: Boolean? = null, val executionBlocker: String? = null,
 )
 
 private data class KpiPosition(
@@ -330,6 +331,7 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
     val scope = rememberCoroutineScope()
     val checkedAt = report?.checkedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
     val fresh = checkedAt != null && Duration.between(checkedAt, Instant.now()).toMinutes() in 0..19
+    val quotes = report?.quotes?.associateBy { it.symbol }.orEmpty()
     Box(Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item {
@@ -349,7 +351,11 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text("اولویت ${pair.rank} · ${pair.a} ↔ ${pair.b}", fontWeight = FontWeight.Bold)
-                        Text(if (current && observation?.status == "observed" && (observation.screenPct ?: 0.0) > 0.0) "اختلاف نسبی مشاهده‌شده: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪" else if (observation == null) "هنوز مشاهده‌ای ثبت نشده" else if (observation.status == "blocked") "دادهٔ معتبر برای سنجش این جفت کافی نبود" else "اختلاف مثبتِ تازه و قابل بررسی ندارد")
+                        listOf(pair.a, pair.b).forEach { symbol ->
+                            val quote = quotes[symbol]
+                            Text("$symbol · خرید ${quote?.askIrr?.let { formatter.format(it) } ?: "—"} · فروش ${quote?.bidIrr?.let { formatter.format(it) } ?: "—"} · NAV ${quote?.navIrr?.let { formatter.format(it) } ?: "—"} ریال", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(if (current && observation?.status == "observed" && (observation.screenPct ?: 0.0) > 0.0) "اختلاف نسبی مشاهده‌شده: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪" else if (observation == null) "هنوز مشاهده‌ای ثبت نشده" else if (observation.reason == "market-closed-or-stale") "قیمت ثبت شده؛ بازار بسته یا داده قدیمی است" else if (observation.status == "blocked") "عمق یا NAV معتبر برای سنجش این جفت کافی نیست" else "اختلاف مثبتِ تازه و قابل بررسی ندارد")
                         Text("معاملهٔ فرضی ثبت نشده${observation?.sampledAt?.let { " · آخرین نمونه: ${formatFundTime(it)}" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
@@ -495,7 +501,7 @@ private fun buildVenuePrices(
     }.sortedWith(compareBy({ it.ask == null && it.bid == null && it.last == null }, { it.name }))
 }
 
-private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellVenueId, quantity, unit, buyPriceToman, sellPriceToman, totalCostsToman, slippageToman, netProfitToman, realizedProfitToman, decision, executionStatus, sampledAt, costPolicy)
+private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellVenueId, quantity, unit, buyPriceToman, sellPriceToman, totalCostsToman, slippageToman, netProfitToman, realizedProfitToman, decision, executionStatus, sampledAt, costPolicy, executionEligible, executionBlocker)
 
 @Composable private fun HeroCard(page: AssetPage, updatedAt: String?) { Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = page.color.copy(alpha = .12f)), modifier = Modifier.border(1.dp, page.color.copy(alpha=.3f), RoundedCornerShape(28.dp))) { Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("بازار ${page.label}", color = page.color, fontWeight = FontWeight.Bold); Text(page.description, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black); Text(updatedAt ?: "در انتظار اولین پایش", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }; ElementBadge(page.symbol, page.color, 88) } } }
 
@@ -504,7 +510,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     val tradingCapital = positions.sumOf { it.initialToman + it.initialAsset * (it.lastPrice ?: 0.0) }
     val currentEquity = positions.sumOf { it.toman + it.asset * (it.lastPrice ?: 0.0) }
     val engagedCapital = positions.sumOf { maxOf(0.0, it.asset * (it.lastPrice ?: 0.0)) }
-    val accepted = signals.count { it.decision == "accepted" && it.costPolicy != "legacy-repriced" }
+    val accepted = signals.count { it.executionEligible == true || (it.executionEligible == null && it.executionStatus == "buy-and-sell") }
     val average = signals.map { it.netProfit }.average().takeIf { !it.isNaN() } ?: 0.0
     val profitLoss = currentEquity - tradingCapital
     var cumulative = 0.0
@@ -524,7 +530,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
         KpiMetric("سرمایه معاملاتی", money(tradingCapital), "بودجه اولیه دفتر"),
         KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
         KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "همه سیگنال‌های مثبت"),
-        KpiMetric("فرصت بالای آستانه", formatter.format(accepted), "بدون تضمین موجودی و اجرا", positive = true),
+        KpiMetric("فرصت قابل اجرا", formatter.format(accepted), "موجودی دو سمت و وقفهٔ مسیر کنترل شده", positive = true),
         KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
         KpiMetric("سود معاملات بسته‌شده", if (completed.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completed.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completed.size)} چرخه کامل خرید و فروش", positive = true),
         KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
@@ -716,7 +722,7 @@ private fun SignalCard(page: AssetPage, signal: DisplaySignal?, venueName: (Stri
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = if (signal.decision == "accepted") Positive.copy(alpha = .14f) else Caution.copy(alpha = .14f), shape = RoundedCornerShape(999.dp)) {
-                        Text(if (signal.costPolicy == "legacy-repriced") "مدل قدیمی؛ اجرای جدید نیست" else if (signal.decision == "accepted") "بالای آستانه؛ موجودی باید بررسی شود" else "مثبت، زیر آستانه معامله", color = if (signal.decision == "accepted" && signal.costPolicy != "legacy-repriced") Positive else Caution, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), fontSize = 12.sp)
+                        Text(if (signal.costPolicy == "legacy-repriced") "مدل قدیمی؛ اجرای جدید نیست" else if (signal.executionStatus == "buy-and-sell") "چرخه دوطرفه ثبت شد" else if (signal.executionEligible == true) "قابل اجرا؛ در صف انتخاب" else if (signal.decision == "accepted") when (signal.executionBlocker) { "insufficient-inventory" -> "موجودی فروش کافی نیست"; "insufficient-cash" -> "ریال خرید کافی نیست"; "cooldown-active" -> "وقفهٔ ضدتکرار مسیر فعال است"; else -> "شرایط دوطرفه کامل نیست" } else "مثبت، زیر آستانه معامله", color = if (signal.executionEligible == true || signal.executionStatus == "buy-and-sell") Positive else Caution, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), fontSize = 12.sp)
                     }
                     Spacer(Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End) { Text("سود خالص", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(money(signal.netProfit), fontWeight = FontWeight.Black, color = Positive) }

@@ -98,6 +98,16 @@ data class FundPairReport(
     val available: Boolean,
     val validDays: Int,
     val targetValidDays: Int,
+    val quotes: List<FundQuote> = emptyList(),
+)
+
+data class FundQuote(
+    val symbol: String,
+    val bidIrr: Double?,
+    val askIrr: Double?,
+    val navIrr: Double?,
+    val observedAt: String?,
+    val marketOpen: Boolean,
 )
 
 data class FundPairItem(
@@ -114,6 +124,7 @@ data class FundPairObservation(
     val screenPct: Double?,
     val sellFund: String?,
     val buyFund: String?,
+    val reason: String? = null,
 )
 
 data class AssetVenueQuote(
@@ -156,6 +167,8 @@ data class AssetSignal(
     val executionStatus: String,
     val sampledAt: String,
     val costPolicy: String? = null,
+    val executionEligible: Boolean? = null,
+    val executionBlocker: String? = null,
 )
 
 data class AssetTrade(

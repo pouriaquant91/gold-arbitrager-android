@@ -353,6 +353,8 @@ class PublicFeedMarketRepository : MarketRepository {
                 decision = row.getString("decision"), executionStatus = row.getString("execution_status"),
                 sampledAt = row.getString("sampled_at"),
                 costPolicy = row.optString("cost_policy").ifBlank { null },
+                executionEligible = if (row.has("execution_eligible")) row.optBoolean("execution_eligible") else null,
+                executionBlocker = row.optString("execution_blocker").ifBlank { null },
             )
         }
         val tradeRows = payload.optJSONArray("trades")
@@ -443,12 +445,25 @@ class PublicFeedMarketRepository : MarketRepository {
                     screenPct = if (item.isNull("screen_pct")) null else item.getDouble("screen_pct"),
                     sellFund = item.optString("sell_fund").takeIf(String::isNotBlank),
                     buyFund = item.optString("buy_fund").takeIf(String::isNotBlank),
+                    reason = item.optString("reason").ifBlank { null },
                 )
             }
             FundPairItem(row.getInt("id"), row.getInt("rank"), row.getString("a"), row.getString("b"), latest)
         }
+        val quoteRows = payload.optJSONArray("quotes")
+        val quotes = if (quoteRows == null) emptyList() else (0 until quoteRows.length()).map { index ->
+            val row = quoteRows.getJSONObject(index)
+            com.pouriaquant.goldarb.data.FundQuote(
+                symbol = row.getString("symbol"),
+                bidIrr = if (row.isNull("bid_irr")) null else row.getDouble("bid_irr"),
+                askIrr = if (row.isNull("ask_irr")) null else row.getDouble("ask_irr"),
+                navIrr = if (row.isNull("nav_irr")) null else row.getDouble("nav_irr"),
+                observedAt = row.optString("observed_at").ifBlank { null },
+                marketOpen = row.optInt("market_open", 0) == 1 || row.optBoolean("market_open", false),
+            )
+        }
         return FundPairReport(payload.optJSONObject("state")?.optString("checked_at"), pairs, true,
-            payload.optJSONObject("summary")?.optInt("valid_days") ?: 0, payload.optInt("targetValidDays", 3))
+            payload.optJSONObject("summary")?.optInt("valid_days") ?: 0, payload.optInt("targetValidDays", 3), quotes)
     }
 
     private fun parseStrategyState(payload: JSONObject): ServerStrategyState {
