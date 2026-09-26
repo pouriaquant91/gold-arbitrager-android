@@ -459,6 +459,7 @@ class PublicFeedMarketRepository : MarketRepository {
                 askIrr = if (row.isNull("ask_irr")) null else row.getDouble("ask_irr"),
                 navIrr = if (row.isNull("nav_irr")) null else row.getDouble("nav_irr"),
                 observedAt = row.optString("observed_at").ifBlank { null },
+                navAt = row.optString("nav_at").ifBlank { null },
                 marketOpen = row.optInt("market_open", 0) == 1 || row.optBoolean("market_open", false),
             )
         }

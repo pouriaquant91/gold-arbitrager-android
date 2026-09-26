@@ -107,6 +107,7 @@ data class FundQuote(
     val askIrr: Double?,
     val navIrr: Double?,
     val observedAt: String?,
+    val navAt: String?,
     val marketOpen: Boolean,
 )
 

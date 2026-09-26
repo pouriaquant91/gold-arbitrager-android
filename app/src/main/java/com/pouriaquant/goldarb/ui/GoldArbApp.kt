@@ -338,8 +338,8 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text("۱۳ جفت‌صندوق طلا", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("پایش پژوهشی دفتر سفارش؛ بدون سفارش واقعی یا سود ثبت‌شده.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("روزهای دادهٔ معتبر: ${report?.validDays ?: 0} از ${report?.targetValidDays ?: 3}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("قیمت خرید و فروش از دفتر سفارش است؛ NAV ارزش هر واحد برای مقایسه است. اختلاف مثبت سود قطعی نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("روزهای دادهٔ معتبر: ${report?.validDays ?: 0} (حداقل ${report?.targetValidDays ?: 3})", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(if (report == null) "گزارش سرور در دسترس نیست" else if (fresh) "آخرین بررسی سرور: ${formatFundTime(report.checkedAt)}" else "در انتظار دادهٔ تازه از سرور", color = if (fresh) Positive else Caution)
                     }
                 }
@@ -353,9 +353,22 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                         Text("اولویت ${pair.rank} · ${pair.a} ↔ ${pair.b}", fontWeight = FontWeight.Bold)
                         listOf(pair.a, pair.b).forEach { symbol ->
                             val quote = quotes[symbol]
-                            Text("$symbol · خرید ${quote?.askIrr?.let { formatter.format(it) } ?: "—"} · فروش ${quote?.bidIrr?.let { formatter.format(it) } ?: "—"} · NAV ${quote?.navIrr?.let { formatter.format(it) } ?: "—"} ریال", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val bookAt = quote?.observedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                            val navAt = quote?.navAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                            val quoteFresh = fresh && quote?.marketOpen == true && bookAt != null && navAt != null &&
+                                Duration.between(bookAt, Instant.now()).seconds in 0..120 && Duration.between(navAt, Instant.now()).seconds in 0..300
+                            Text("$symbol · خرید ${quote?.askIrr?.let { formatter.format(it) } ?: "—"} · فروش ${quote?.bidIrr?.let { formatter.format(it) } ?: "—"} · NAV هر واحد ${quote?.navIrr?.let { formatter.format(it) } ?: "—"} ریال", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (quoteFresh) "دفتر سفارش و NAV تازه" else "دادهٔ قبلی یا نامعتبر", fontSize = 11.sp, color = if (quoteFresh) Positive else Caution)
                         }
-                        Text(if (current && observation?.status == "observed" && (observation.screenPct ?: 0.0) > 0.0) "اختلاف نسبی مشاهده‌شده: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪" else if (observation == null) "هنوز مشاهده‌ای ثبت نشده" else if (observation.reason == "market-closed-or-stale") "قیمت ثبت شده؛ بازار بسته یا داده قدیمی است" else if (observation.status == "blocked") "عمق یا NAV معتبر برای سنجش این جفت کافی نیست" else "اختلاف مثبتِ تازه و قابل بررسی ندارد")
+                        val reason = when (observation?.reason) {
+                            "market-closed-or-stale", "market-closed-or-halted" -> "بازار بسته یا داده قدیمی است"
+                            "stale-nav" -> "NAV قدیمی است"
+                            "stale-book" -> "دفتر سفارش قدیمی است"
+                            "non-synchronous-books" -> "زمان دو دفتر سفارش هم‌خوان نیست"
+                            "insufficient-five-level-depth" -> "عمق سفارش برای ۵۰ میلیون تومان کافی نیست"
+                            else -> "دفتر سفارش یا NAV معتبر نیست"
+                        }
+                        Text(if (!current) "دادهٔ تازه برای این جفت در دسترس نیست" else if (observation?.status == "blocked") reason else if ((observation?.screenPct ?: 0.0) > 0.0) "اختلاف نسبی پس از کارمزد: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪ · فروش ${observation.sellFund}، خرید ${observation.buyFund}" else "اختلاف مثبت پس از کارمزد دیده نشد")
                         Text("معاملهٔ فرضی ثبت نشده${observation?.sampledAt?.let { " · آخرین نمونه: ${formatFundTime(it)}" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
@@ -484,6 +497,10 @@ private fun buildVenuePrices(
         val ask = liveQuote?.askToman ?: buySignal?.buyPrice
         val bid = liveQuote?.bidToman ?: sellSignal?.sellPrice
         val last = position?.lastPriceToman
+        val quoteAge = liveQuote?.sampledAt?.let { runCatching { Duration.between(Instant.parse(it), Instant.now()).seconds }.getOrNull() }
+        val quoteCurrent = quoteAge != null && quoteAge in 0..120 && liveQuote?.let {
+            it.askToman == null || it.bidToman == null || it.askToman >= it.bidToman
+        } == true
         VenuePriceItem(
             id = id,
             name = page.venues.firstOrNull { it.first == id }?.second ?: liveQuote?.displayName ?: fallbackName,
@@ -491,11 +508,12 @@ private fun buildVenuePrices(
             bid = bid,
             last = last,
             status = when {
-                ask != null && bid != null -> if (liveQuote?.executableDepth == true) "دوطرفه با عمق اجرا" else "دوطرفه؛ عمق اجرا تأیید نشده"
+                liveQuote != null && !quoteCurrent -> "قدیمی یا نامعتبر"
+                ask != null && bid != null -> if (quoteCurrent && liveQuote?.executableDepth == true) "دوطرفه با عمق اجرا" else "دوطرفه؛ عمق اجرا تأیید نشده"
                 ask != null || bid != null || last != null -> "آخرین گزارش پایش سرور"
                 else -> "قیمت زنده در دسترس نیست"
             },
-            source = if (liveQuote != null) "فید زنده سرور" else "در صف اتصال ${page.label}",
+            source = if (quoteCurrent) "فید زنده سرور" else if (liveQuote != null) "آخرین دادهٔ سرور" else "در صف اتصال ${page.label}",
             isReference = false,
         )
     }.sortedWith(compareBy({ it.ask == null && it.bid == null && it.last == null }, { it.name }))
