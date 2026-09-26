@@ -405,7 +405,7 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         item { HeroCard(page, if (page == AssetPage.GOLD) state.serverUpdatedAt else state.assetHeartbeats.firstOrNull { it.asset == page.key }?.checkedAt) }
-        item { KpiDashboard(page, signals, kpiPositions) }
+        item { KpiDashboard(page, signals, kpiPositions, displayTrades) }
         item { SignalCard(page, best, venueName) }
         item { PaperTradeCard(page, displayTrades, venueName) }
         item {
@@ -506,33 +506,39 @@ private fun AssetSignal.toDisplay() = DisplaySignal(id, asset, buyVenueId, sellV
 @Composable private fun HeroCard(page: AssetPage, updatedAt: String?) { Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = page.color.copy(alpha = .12f)), modifier = Modifier.border(1.dp, page.color.copy(alpha=.3f), RoundedCornerShape(28.dp))) { Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("بازار ${page.label}", color = page.color, fontWeight = FontWeight.Bold); Text(page.description, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black); Text(updatedAt ?: "در انتظار اولین پایش", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }; ElementBadge(page.symbol, page.color, 88) } } }
 
 @Composable
-private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, positions: List<KpiPosition>) {
-    val tradingCapital = positions.sumOf { it.initialToman + it.initialAsset * (it.lastPrice ?: 0.0) }
-    val currentEquity = positions.sumOf { it.toman + it.asset * (it.lastPrice ?: 0.0) }
+private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, positions: List<KpiPosition>, trades: List<DisplayTrade>) {
+    val tradingCapital = positions.sumOf { it.initialToman }
+    val currentEquity = positions.sumOf { it.toman + (it.asset - it.initialAsset) * (it.lastPrice ?: 0.0) }
     val engagedCapital = positions.sumOf { maxOf(0.0, it.asset * (it.lastPrice ?: 0.0)) }
-    val accepted = signals.count { it.executionEligible == true || (it.executionEligible == null && it.executionStatus == "buy-and-sell") }
+    val aboveThreshold = signals.count { it.decision == "accepted" }
+    val executionEligible = signals.count { it.executionEligible == true || (it.executionEligible == null && it.executionStatus == "buy-and-sell" && it.costPolicy != "legacy-repriced") }
     val average = signals.map { it.netProfit }.average().takeIf { !it.isNaN() } ?: 0.0
     val profitLoss = currentEquity - tradingCapital
     var cumulative = 0.0
     var peak = 0.0
     var drawdown = 0.0
-    signals.filter { it.executionStatus == "buy-and-sell" }.sortedBy { it.sampledAt }.forEach {
-        cumulative += it.realizedProfit ?: it.netProfit
+    val completedCycles = trades.groupBy { it.signalId }.values.mapNotNull { cycle ->
+        val buy = cycle.firstOrNull { it.side == "buy" }
+        val sell = cycle.firstOrNull { it.side == "sell" }
+        if (buy == null || sell == null) null else cycle.maxOf { it.occurredAt } to (sell.totalToman - buy.totalToman)
+    }.sortedBy { it.first }
+    completedCycles.forEach { (_, realized) ->
+        cumulative += realized
         peak = maxOf(peak, cumulative)
         drawdown = maxOf(drawdown, peak - cumulative)
     }
     drawdown = maxOf(drawdown, maxOf(0.0, -profitLoss))
     val drawdownRate = if (tradingCapital > 0) drawdown / tradingCapital else 0.0
-    val completed = signals.filter { it.executionStatus == "buy-and-sell" }
-    val realizedProfit = completed.sumOf { it.realizedProfit ?: it.netProfit }
+    val realizedProfit = completedCycles.sumOf { it.second }
     val managementProfit = maxOf(0.0, realizedProfit)
     val metrics = listOf(
         KpiMetric("سرمایه معاملاتی", money(tradingCapital), "بودجه اولیه دفتر"),
         KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
-        KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "همه سیگنال‌های مثبت"),
-        KpiMetric("فرصت قابل اجرا", formatter.format(accepted), "موجودی دو سمت و وقفهٔ مسیر کنترل شده", positive = true),
+        KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "سیگنال‌های مثبت در پنجره گزارش"),
+        KpiMetric("فرصت بالای آستانه", formatter.format(aboveThreshold), "عبور از آستانه؛ معامله محسوب نمی‌شود", positive = true),
+        KpiMetric("قابل اجرای واقعی", formatter.format(executionEligible), "موجودی، تازگی، عمق و وقفه تأیید شده", positive = true),
         KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
-        KpiMetric("سود معاملات بسته‌شده", if (completed.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completed.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completed.size)} چرخه کامل خرید و فروش", positive = true),
+        KpiMetric("سود معاملات بسته‌شده", if (completedCycles.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completedCycles.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completedCycles.size)} چرخه کامل خرید و فروش", positive = true),
         KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
     )
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
