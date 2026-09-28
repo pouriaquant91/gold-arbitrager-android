@@ -21,6 +21,10 @@ assert.match(
   new RegExp(`versionName = "${contract.distribution.androidVersion}"`),
 );
 assert.ok(ui.includes('ModalNavigationDrawer('));
+const funds = ui.slice(ui.indexOf('private fun FundPairsPage'), ui.indexOf('private fun FundPairsPage') + 6000);
+assert.ok(!/\bNAV\b/.test(funds), 'fund view must not restore the removed NAV label');
+assert.ok(funds.includes('قیمت خرید هر واحد (ریال)'));
+assert.ok(funds.includes('قیمت فروش هر واحد (ریال)'));
 assert.ok(ui.includes('"طلای ۱۸ عیار"'));
 assert.ok(ui.includes('"نقره ۹۹۹"'));
 assert.ok(ui.includes('"مس کاتد"'));

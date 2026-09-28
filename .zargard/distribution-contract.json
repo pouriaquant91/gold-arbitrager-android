@@ -46,9 +46,9 @@
   },
   "distribution": {
     "coreVersion": "1.4.6",
-    "androidVersion": "0.20.4",
-    "pwaVersion": "1.4.5",
-    "iosVersion": "0.3.4"
+    "androidVersion": "0.20.5",
+    "pwaVersion": "1.4.6",
+    "iosVersion": "0.3.5"
   },
   "managementPresentation": {
     "profitMetric": "closed-trade-realized-signed",

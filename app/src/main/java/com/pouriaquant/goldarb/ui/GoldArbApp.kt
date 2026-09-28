@@ -338,7 +338,7 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text("۱۳ جفت‌صندوق طلا", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("قیمت خرید و فروش از دفتر سفارش است؛ NAV ارزش هر واحد برای مقایسه است. اختلاف مثبت سود قطعی نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("قیمت خرید و فروش هر واحد از دفتر سفارش است. واحد دو صندوق متفاوت، دارایی یکسان نیست؛ اختلاف نسبی سود قطعی نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("روزهای دادهٔ معتبر: ${report?.validDays ?: 0} (حداقل ${report?.targetValidDays ?: 3})", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(if (report == null) "گزارش سرور در دسترس نیست" else if (fresh) "آخرین بررسی سرور: ${formatFundTime(report.checkedAt)}" else "در انتظار دادهٔ تازه از سرور", color = if (fresh) Positive else Caution)
                     }
@@ -354,19 +354,25 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                         listOf(pair.a, pair.b).forEach { symbol ->
                             val quote = quotes[symbol]
                             val bookAt = quote?.observedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
-                            val navAt = quote?.navAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
-                            val quoteFresh = fresh && quote?.marketOpen == true && bookAt != null && navAt != null &&
-                                Duration.between(bookAt, Instant.now()).seconds in 0..120 && Duration.between(navAt, Instant.now()).seconds in 0..300
-                            Text("$symbol · خرید ${quote?.askIrr?.let { formatter.format(it) } ?: "—"} · فروش ${quote?.bidIrr?.let { formatter.format(it) } ?: "—"} · NAV هر واحد ${quote?.navIrr?.let { formatter.format(it) } ?: "—"} ریال", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(if (quoteFresh) "دفتر سفارش و NAV تازه" else "دادهٔ قبلی یا نامعتبر", fontSize = 11.sp, color = if (quoteFresh) Positive else Caution)
+                            val quoteFresh = fresh && quote?.marketOpen == true && bookAt != null &&
+                                Duration.between(bookAt, Instant.now()).seconds in 0..120
+                            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(symbol, fontWeight = FontWeight.Bold)
+                                Text("قیمت خرید هر واحد (ریال)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(quote?.askIrr?.let { formatter.format(it) } ?: "—", fontWeight = FontWeight.Bold)
+                                Text("قیمت فروش هر واحد (ریال)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(quote?.bidIrr?.let { formatter.format(it) } ?: "—", fontWeight = FontWeight.Bold)
+                                Text(if (quoteFresh) "دفتر سفارش تازه" else "بازار بسته یا دفتر سفارش قدیمی است", fontSize = 12.sp, color = if (quoteFresh) Positive else Caution)
+                                Text("زمان دفتر سفارش: ${formatFundTime(quote?.observedAt)}", fontSize = 12.sp)
+                            }
                         }
                         val reason = when (observation?.reason) {
                             "market-closed-or-stale", "market-closed-or-halted" -> "بازار بسته یا داده قدیمی است"
-                            "stale-nav" -> "NAV قدیمی است"
+                            "stale-nav" -> "دادهٔ مبنای مقایسه قدیمی است"
                             "stale-book" -> "دفتر سفارش قدیمی است"
                             "non-synchronous-books" -> "زمان دو دفتر سفارش هم‌خوان نیست"
                             "insufficient-five-level-depth" -> "عمق سفارش برای ۵۰ میلیون تومان کافی نیست"
-                            else -> "دفتر سفارش یا NAV معتبر نیست"
+                            else -> "دادهٔ مقایسه یا دفتر سفارش معتبر نیست"
                         }
                         Text(if (!current) "دادهٔ تازه برای این جفت در دسترس نیست" else if (observation?.status == "blocked") reason else if ((observation?.screenPct ?: 0.0) > 0.0) "اختلاف نسبی پس از کارمزد: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪ · فروش ${observation.sellFund}، خرید ${observation.buyFund}" else "اختلاف مثبت پس از کارمزد دیده نشد")
                         Text("معاملهٔ فرضی ثبت نشده${observation?.sampledAt?.let { " · آخرین نمونه: ${formatFundTime(it)}" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
