@@ -47,7 +47,7 @@
   "distribution": {
     "coreVersion": "1.4.6",
     "androidVersion": "0.20.4",
-    "pwaVersion": "1.4.4",
+    "pwaVersion": "1.4.5",
     "iosVersion": "0.3.4"
   },
   "managementPresentation": {
