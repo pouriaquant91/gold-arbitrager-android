@@ -554,7 +554,7 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
         KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
         KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "سیگنال‌های مثبت در پنجره گزارش"),
         KpiMetric("فرصت بالای آستانه", formatter.format(aboveThreshold), "عبور از آستانه؛ معامله محسوب نمی‌شود", positive = true),
-        KpiMetric("قابل اجرای واقعی", formatter.format(executionEligible), "موجودی، تازگی، عمق و وقفه تأیید شده", positive = true),
+        KpiMetric("واجد شرایط اجرای فرضی", formatter.format(executionEligible), "موجودی، تازگی، عمق و وقفه تأیید شده؛ نه سفارش واقعی", positive = true),
         KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
         KpiMetric("سود معاملات بسته‌شده", if (completedCycles.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completedCycles.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completedCycles.size)} چرخه کامل خرید و فروش", positive = true),
         KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
