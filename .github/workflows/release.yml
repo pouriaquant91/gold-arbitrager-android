@@ -39,12 +39,16 @@ jobs:
       - name: Test and build installable beta APK
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
       - name: Prepare release asset
-        run: cp app/build/outputs/apk/debug/app-debug.apk "RASAD-android-${GITHUB_REF_NAME#android-v}-beta.apk"
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk "RASAD-android-${GITHUB_REF_NAME#android-v}-beta.apk"
+          sha256sum "RASAD-android-${GITHUB_REF_NAME#android-v}-beta.apk" > SHA256SUMS.txt
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
           "RASAD-android-${GITHUB_REF_NAME#android-v}-beta.apk"
+          SHA256SUMS.txt
           --title "رصد ${GITHUB_REF_NAME} Beta"
-          --notes "نسخه آزمایشی رصد برای مشاهده سیگنال و معاملات فرضی طلا، نقره، مس و تتر؛ دارای منوی همبرگری، صفحات مستقل بازار، حالت سیستم/روشن/تیره، بسته‌های گرافیت/شفق/کاغذ و قفل اثر انگشت. برنامه سفارش واقعی ارسال نمی‌کند."
+          --prerelease
+          --notes "اصلاح سود/زیان با علامت واقعی، تطبیق تمام fillهای دو پایه، حذف رکورد تکراری و هشدار ارزش‌گذاری ناقص؛ قرارداد v11. APK آزمایشی debug-signed است؛ برای اپ debug قبلی سازگاری کلید امضا باید جداگانه بررسی شود. برنامه سفارش واقعی ارسال نمی‌کند."

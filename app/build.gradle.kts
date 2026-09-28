@@ -11,8 +11,8 @@ android {
         applicationId = "com.pouriaquant.goldarb"
         minSdk = 26
         targetSdk = 36
-        versionCode = 33
-        versionName = "0.20.3"
+        versionCode = 34
+        versionName = "0.20.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
