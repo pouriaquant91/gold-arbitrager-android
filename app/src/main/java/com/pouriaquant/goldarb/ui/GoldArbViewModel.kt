@@ -38,6 +38,7 @@ data class GoldArbUiState(
     val failedVenueNames: List<String> = emptyList(),
     val quantityGram: Double = 1.0,
     val policy: CostPolicy = CostPolicy(),
+    val marketThresholds: Map<String, Double> = mapOf("gold" to 0.005, "silver" to 0.005, "copper" to 0.005, "usdt" to 0.005, "fund-pairs" to 0.0),
     val errorMessage: String? = null,
     val serverRuns: List<ServerOpportunityRun> = emptyList(),
     val serverConnected: Boolean = false,
@@ -114,6 +115,7 @@ class GoldArbViewModel(
                     referencePrices = snapshot.referencePrices,
                     fundPairs = snapshot.fundPairs,
                     policy = policy,
+                    marketThresholds = strategyState?.minimumProfitRates?.ifEmpty { state.marketThresholds } ?: state.marketThresholds,
                     errorMessage = if (snapshot.quotes.isEmpty()) "هنوز قیمتی دریافت نشده است" else null,
                 )
             }.onFailure {
@@ -122,7 +124,8 @@ class GoldArbViewModel(
         }
     }
 
-    fun setMinimumProfitPercent(percent: Double) {
+    fun setMinimumProfitPercent(market: String, percent: Double) {
+        if (market !in state.marketThresholds || !percent.isFinite() || percent !in 0.0..100.0) return
         val rate = (percent / 100).coerceIn(0.0, 1.0)
         viewModelScope.launch {
             val token = preferences.sessionToken
@@ -130,7 +133,7 @@ class GoldArbViewModel(
                 state = state.copy(errorMessage = "برای تغییر آستانه سرور، دسترسی مدیر لازم است")
                 return@launch
             }
-            runCatching { withContext(Dispatchers.IO) { repository.updateMinimumProfitRate(rate, token) } }
+            runCatching { withContext(Dispatchers.IO) { repository.updateMinimumProfitRate(rate, token, market) } }
                 .onSuccess(::applyStrategyState)
                 .onFailure { state = state.copy(errorMessage = "ذخیره درصد سود روی سرور ناموفق بود") }
         }
@@ -177,6 +180,7 @@ class GoldArbViewModel(
         val policy = state.policy.copy(minimumNetProfitRate = server.minimumProfitRate)
         state = state.copy(
             policy = policy,
+            marketThresholds = server.minimumProfitRates.ifEmpty { state.marketThresholds + ("gold" to server.minimumProfitRate) },
             positions = server.positions,
             portfolio = server.portfolio,
             trades = server.trades,

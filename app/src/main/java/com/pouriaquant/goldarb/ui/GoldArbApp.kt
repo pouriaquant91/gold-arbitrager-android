@@ -308,7 +308,8 @@ fun GoldArbApp(
                     brightness = brightness,
                     fontScale = fontScale,
                     fontFamily = fontFamily,
-                    minimumProfitPercent = state.policy.minimumNetProfitRate * 100,
+                    marketThresholds = state.marketThresholds,
+                    canEditThresholds = state.account?.role == "root",
                     settingsMessage = state.errorMessage,
                     onBiometricChanged = onBiometricChanged,
                     onThemeModeChanged = onThemeModeChanged,
@@ -318,7 +319,7 @@ fun GoldArbApp(
                     onFontFamilyChanged = onFontFamilyChanged,
                     onMinimumProfitPercentChanged = viewModel::setMinimumProfitPercent,
                 )
-                else if (page == AssetPage.FUND_PAIRS) FundPairsPage(state.fundPairs, padding)
+                else if (page == AssetPage.FUND_PAIRS) FundPairsPage(state.fundPairs, padding, state.marketThresholds["fund-pairs"] ?: 0.0)
                 else AssetMarketPage(page, state, padding)
             }
         }
@@ -326,7 +327,7 @@ fun GoldArbApp(
 }
 
 @Composable
-private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
+private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues, thresholdRate: Double) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val checkedAt = report?.checkedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
@@ -338,6 +339,7 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text("۱۳ جفت‌صندوق طلا", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text("آستانه پژوهشی سرور: ${String.format(Locale.US, "%.2f", thresholdRate * 100)}٪؛ اجرای صندوق‌ها فعال نیست.")
                         Text("قیمت خرید و فروش هر واحد از دفتر سفارش است. واحد دو صندوق متفاوت، دارایی یکسان نیست؛ اختلاف نسبی سود قطعی نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("روزهای دادهٔ معتبر: ${report?.validDays ?: 0} (حداقل ${report?.targetValidDays ?: 3})", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(if (report == null) "گزارش سرور در دسترس نیست" else if (fresh) "آخرین بررسی سرور: ${formatFundTime(report.checkedAt)}" else "در انتظار دادهٔ تازه از سرور", color = if (fresh) Positive else Caution)
@@ -375,6 +377,7 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                             else -> "دادهٔ مقایسه یا دفتر سفارش معتبر نیست"
                         }
                         Text(if (!current) "دادهٔ تازه برای این جفت در دسترس نیست" else if (observation?.status == "blocked") reason else if ((observation?.screenPct ?: 0.0) > 0.0) "اختلاف نسبی پس از کارمزد: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪ · فروش ${observation.sellFund}، خرید ${observation.buyFund}" else "اختلاف مثبت پس از کارمزد دیده نشد")
+                        if (current && observation?.status == "observed" && (observation.screenPct ?: 0.0) > 0 && (observation.screenPct ?: 0.0) < thresholdRate * 100) Text("کمتر از آستانه پژوهشی سرور", color = Caution)
                         Text("معاملهٔ فرضی ثبت نشده${observation?.sampledAt?.let { " · آخرین نمونه: ${formatFundTime(it)}" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
@@ -430,6 +433,7 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
         item {
             ReferenceMarketCard(page, referencePrice, usdReference)
         }
+        item { Text("آستانه جاری سرور: ${String.format(Locale.US, "%.2f", (state.marketThresholds[page.key] ?: 0.005) * 100)}٪ سود خالص؛ هزینه‌ها مستقل‌اند و تاریخچه تغییر نمی‌کند.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item { VenuePriceList(page, priceItems, state.isLoading, state.serverConnected) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp)) {
@@ -851,7 +855,8 @@ private fun SettingsPage(
     brightness: AppBrightness,
     fontScale: AppFontScale,
     fontFamily: AppFontFamily,
-    minimumProfitPercent: Double,
+    marketThresholds: Map<String, Double>,
+    canEditThresholds: Boolean,
     settingsMessage: String?,
     onBiometricChanged: (Boolean) -> Unit,
     onThemeModeChanged: (AppThemeMode) -> Unit,
@@ -859,9 +864,10 @@ private fun SettingsPage(
     onBrightnessChanged: (AppBrightness) -> Unit,
     onFontScaleChanged: (AppFontScale) -> Unit,
     onFontFamilyChanged: (AppFontFamily) -> Unit,
-    onMinimumProfitPercentChanged: (Double) -> Unit,
+    onMinimumProfitPercentChanged: (String, Double) -> Unit,
 ) {
-    var thresholdDraft by remember(minimumProfitPercent) { mutableFloatStateOf(minimumProfitPercent.toFloat().coerceIn(0f, 10f)) }
+    var thresholdMarket by remember { mutableStateOf("gold") }
+    var thresholdDraft by remember(thresholdMarket, marketThresholds) { mutableFloatStateOf(((marketThresholds[thresholdMarket] ?: 0.005)*100).toFloat().coerceIn(0f, 100f)) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
@@ -894,24 +900,32 @@ private fun SettingsPage(
         }
         item { SettingSwitch(Icons.Rounded.Fingerprint, "قفل اثر انگشت", if (biometricAvailable) "قفل محلی برنامه" else "در این دستگاه در دسترس نیست", biometricEnabled, biometricAvailable, onBiometricChanged) }
         item {
-            SettingsGroup(Icons.Rounded.Analytics, "آستانه معامله فرضی", "سیگنال‌های مثبت مستقل از آستانه نمایش داده می‌شوند؛ آستانه فقط اجرای فرضی را کنترل می‌کند.") {
+            SettingsGroup(Icons.Rounded.Analytics, "آستانه مستقل هر بازار", "سیگنال مثبت مستقل از آستانه نمایش داده می‌شود؛ آستانه فقط اجرای فرضی جدید را کنترل می‌کند. صندوق‌ها فقط پژوهشی‌اند.") {
+                listOf("gold" to "طلا", "silver" to "نقره", "copper" to "مس", "usdt" to "تتر", "fund-pairs" to "جفت‌صندوق‌ها (پژوهشی)").forEach { (key, label) ->
+                    Button(onClick = { thresholdMarket = key }, modifier = Modifier.fillMaxWidth()) {
+                        Text((if (thresholdMarket == key) "✓ " else "") + label)
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("حداقل سود خالص")
+                    Text(if (thresholdMarket == "fund-pairs") "حداقل اختلاف نسبی پژوهشی" else "حداقل سود خالص")
                     Spacer(Modifier.weight(1f))
-                    Text("${String.format(Locale.US, "%.1f", thresholdDraft)}٪", fontWeight = FontWeight.Black)
+                    Text("${String.format(Locale.US, "%.2f", thresholdDraft)}٪", fontWeight = FontWeight.Black)
                 }
                 Slider(
                     value = thresholdDraft,
                     onValueChange = { thresholdDraft = it },
-                    valueRange = 0f..10f,
-                    steps = 99,
+                    valueRange = 0f..100f,
+                    steps = 9999,
+                    enabled = canEditThresholds,
                 )
                 Button(
-                    onClick = { onMinimumProfitPercentChanged(thresholdDraft.toDouble()) },
+                    onClick = { onMinimumProfitPercentChanged(thresholdMarket, thresholdDraft.toDouble()) },
+                    enabled = canEditThresholds,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("ذخیره آستانه روی سرور")
+                    Text("اعمال آستانهٔ این بازار روی سرور")
                 }
+                Text(if (canEditThresholds) "هر بازار مستقل ذخیره می‌شود؛ هزینه‌ها و سوابق تغییر نمی‌کنند." else "اعمال روی انجین فقط با دسترسی مدیر مجاز است.")
             }
         }
         item {
