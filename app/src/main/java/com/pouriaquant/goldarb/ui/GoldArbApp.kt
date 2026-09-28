@@ -535,10 +535,12 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     var cumulative = 0.0
     var peak = 0.0
     var drawdown = 0.0
-    val completedCycles = trades.groupBy { it.signalId }.values.mapNotNull { cycle ->
-        val buy = cycle.firstOrNull { it.side == "buy" }
-        val sell = cycle.firstOrNull { it.side == "sell" }
-        if (buy == null || sell == null) null else cycle.maxOf { it.occurredAt } to (sell.totalToman - buy.totalToman)
+    val completedCycles = trades.distinctBy { it.id }.groupBy { it.signalId }.values.mapNotNull { cycle ->
+        val buys = cycle.filter { it.side == "buy" }
+        val sells = cycle.filter { it.side == "sell" }
+        val valid = cycle.all { it.quantity.isFinite() && it.quantity > 0 && it.totalToman.isFinite() && it.totalToman >= 0 }
+        if (!valid || buys.isEmpty() || sells.isEmpty() || kotlin.math.abs(buys.sumOf { it.quantity } - sells.sumOf { it.quantity }) > 1e-8) null
+        else cycle.maxOf { it.occurredAt } to (sells.sumOf { it.totalToman } - buys.sumOf { it.totalToman })
     }.sortedBy { it.first }
     completedCycles.forEach { (_, realized) ->
         cumulative += realized
@@ -548,15 +550,15 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     drawdown = maxOf(drawdown, maxOf(0.0, -profitLoss))
     val drawdownRate = if (tradingCapital > 0) drawdown / tradingCapital else 0.0
     val realizedProfit = completedCycles.sumOf { it.second }
-    val managementProfit = maxOf(0.0, realizedProfit)
+    val unpricedInventory = positions.count { it.asset > 0 && (it.lastPrice == null || !it.lastPrice.isFinite() || it.lastPrice <= 0) }
     val metrics = listOf(
         KpiMetric("سرمایه معاملاتی", money(tradingCapital), "بودجه اولیه دفتر"),
-        KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
+        KpiMetric("سرمایه درگیر", money(engagedCapital), if (unpricedInventory > 0) "$unpricedInventory موجودی بدون قیمت؛ جمع ناقص است" else "ارزش با آخرین قیمت ذخیره‌شده؛ نه ارزش زنده"),
         KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "سیگنال‌های مثبت در پنجره گزارش"),
         KpiMetric("فرصت بالای آستانه", formatter.format(aboveThreshold), "عبور از آستانه؛ معامله محسوب نمی‌شود", positive = true),
         KpiMetric("واجد شرایط اجرای فرضی", formatter.format(executionEligible), "موجودی، تازگی، عمق و وقفه تأیید شده؛ نه سفارش واقعی", positive = true),
         KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
-        KpiMetric("سود معاملات بسته‌شده", if (completedCycles.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completedCycles.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completedCycles.size)} چرخه کامل خرید و فروش", positive = true),
+        KpiMetric("سود معاملات بسته‌شده", if (completedCycles.isEmpty()) "هنوز ثبت نشده" else money(realizedProfit), if (completedCycles.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completedCycles.size)} چرخه کامل خرید و فروش", positive = realizedProfit > 0, warning = realizedProfit < 0),
         KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
     )
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
