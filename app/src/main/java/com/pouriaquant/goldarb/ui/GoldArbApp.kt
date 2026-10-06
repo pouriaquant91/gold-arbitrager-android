@@ -434,6 +434,18 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
             ReferenceMarketCard(page, referencePrice, usdReference)
         }
         item { Text("آستانه جاری سرور: ${String.format(Locale.US, "%.2f", (state.marketThresholds[page.key] ?: 0.005) * 100)}٪ سود خالص؛ هزینه‌ها مستقل‌اند و تاریخچه تغییر نمی‌کند.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        if (page == AssetPage.USDT) item { Text("سود و چرخه‌های قبلی تتر فقط فرضی‌اند؛ پرشدن واقعی و زمان رویداد صرافی تأیید نشده است. اجرای فرضی جدید تا تأیید زمان منبع متوقف است.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        if (page == AssetPage.USDT) item {
+            val diagnostic = state.assetHeartbeats.firstOrNull { it.asset == "usdt" }?.diagnostics
+            if (diagnostic != null) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("علت رد نامزدهای تتر", fontWeight = FontWeight.Bold)
+                    Text("دفتر معتبر ${diagnostic.admittedBooks} از ${diagnostic.requestedBooks}؛ خطای دریافت ${diagnostic.transportFailures}، نامعتبر ${diagnostic.invalidBooks}، عمق ناکافی ${diagnostic.insufficientDepthBooks}، پرت ${diagnostic.outlierBooks}")
+                    Text("مسیر ${diagnostic.candidateRoutes}؛ اختلاف ناخالص نامثبت ${diagnostic.nonpositiveGross}، کارمزد ${diagnostic.feesAndVat}، ذخیره اجرا ${diagnostic.executionReserve}، بازتوازن/تسویه ${diagnostic.rebalanceAndSettlement}؛ مثبت مدل‌شده ${diagnostic.positiveRoutes}")
+                    Text("زمان رویداد صرافی تأیید نشده؛ اجرای فرضی جدید متوقف است.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         item { VenuePriceList(page, priceItems, state.isLoading, state.serverConnected) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp)) {
@@ -758,7 +770,7 @@ private fun SignalCard(page: AssetPage, signal: DisplaySignal?, venueName: (Stri
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = if (signal.decision == "accepted") Positive.copy(alpha = .14f) else Caution.copy(alpha = .14f), shape = RoundedCornerShape(999.dp)) {
-                        Text(if (signal.costPolicy == "legacy-repriced") "مدل قدیمی؛ اجرای جدید نیست" else if (signal.executionStatus == "buy-and-sell") "چرخه دوطرفه ثبت شد" else if (signal.executionEligible == true) "قابل اجرا؛ در صف انتخاب" else if (signal.decision == "accepted") when (signal.executionBlocker) { "insufficient-inventory" -> "موجودی فروش کافی نیست"; "insufficient-cash" -> "ریال خرید کافی نیست"; "cooldown-active" -> "وقفهٔ ضدتکرار مسیر فعال است"; else -> "شرایط دوطرفه کامل نیست" } else "مثبت، زیر آستانه معامله", color = if (signal.executionEligible == true || signal.executionStatus == "buy-and-sell") Positive else Caution, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), fontSize = 12.sp)
+                        Text(if (signal.costPolicy == "legacy-repriced") "مدل قدیمی؛ اجرای جدید نیست" else if (signal.executionStatus == "buy-and-sell") "چرخه دوطرفه ثبت شد" else if (signal.executionEligible == true) "قابل اجرا؛ در صف انتخاب" else if (signal.decision == "accepted") when (signal.executionBlocker) { "insufficient-inventory" -> "موجودی فروش کافی نیست"; "insufficient-cash" -> "ریال خرید کافی نیست"; "cooldown-active" -> "وقفهٔ ضدتکرار مسیر فعال است"; "unverified-source-time" -> "زمان قیمت صرافی تأیید نشده؛ اجرای فرضی متوقف است"; else -> "شرایط دوطرفه کامل نیست" } else "مثبت، زیر آستانه معامله", color = if (signal.executionEligible == true || signal.executionStatus == "buy-and-sell") Positive else Caution, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), fontSize = 12.sp)
                     }
                     Spacer(Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End) { Text("سود خالص", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(money(signal.netProfit), fontWeight = FontWeight.Black, color = Positive) }

@@ -383,6 +383,14 @@ class PublicFeedMarketRepository : MarketRepository {
             AssetHeartbeat(
                 asset = row.getString("asset"), status = row.getString("status"), sourceCount = row.getInt("source_count"),
                 errorCount = row.getInt("error_count"), checkedAt = row.getString("checked_at"),
+                diagnostics = row.optJSONObject("diagnostics")?.let { diagnostic -> UsdtDiagnostics(
+                    requestedBooks = diagnostic.getInt("requestedBooks"), admittedBooks = diagnostic.getInt("admittedBooks"),
+                    transportFailures = diagnostic.getInt("transportFailures"), invalidBooks = diagnostic.getInt("invalidBooks"),
+                    insufficientDepthBooks = diagnostic.getInt("insufficientDepthBooks"), outlierBooks = diagnostic.getInt("outlierBooks"),
+                    candidateRoutes = diagnostic.getInt("candidateRoutes"), nonpositiveGross = diagnostic.getInt("nonpositiveGross"),
+                    feesAndVat = diagnostic.getInt("feesAndVat"), executionReserve = diagnostic.getInt("executionReserve"),
+                    rebalanceAndSettlement = diagnostic.getInt("rebalanceAndSettlement"), positiveRoutes = diagnostic.getInt("positiveRoutes"),
+                ) },
             )
         }
         val quoteRows = payload.optJSONArray("quotes")

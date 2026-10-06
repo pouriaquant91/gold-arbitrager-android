@@ -49,7 +49,7 @@ assert.equal(contract.multiAsset.usdtInitialTomanPerVenue, 100_000_000);
 assert.equal(contract.multiAsset.usdtInitialAssetPerVenue, 200);
 assert.equal(contract.multiAsset.tradeMode, 'server-paper-ledger');
 assert.equal(contract.identity.visibleInClients, false);
-  assert.equal(contract.schemaVersion, 12);
+  assert.equal(contract.schemaVersion, 13);
 assert.equal(contract.managementPresentation.profitMetric, 'closed-trade-realized-signed');
 assert.equal(contract.managementPresentation.negativeValuesVisible, true);
 assert.equal(contract.managementPresentation.rawLedgerPreserved, true);

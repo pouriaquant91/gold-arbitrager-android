@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 12,
-  "updatedAt": "2026-09-28T16:10:00Z",
+  "schemaVersion": 13,
+  "updatedAt": "2026-10-06T14:00:00Z",
   "productName": "RASAD",
   "strategy": {
     "minimumNetProfitRate": 0.005,
@@ -39,19 +39,19 @@
     "plannedChannels": ["telegram", "sms"]
   },
   "coverage": {
-    "catalogTotal": 53,
+    "catalogTotal": 55,
     "adapterSnapshots": 36,
     "configuredCollectors": 30,
     "acceptedProbe": 26,
     "comparableTwoSided": 4,
     "quarantinedTwoSided": 12,
-    "missingFeeds": 16
+    "missingFeeds": 18
   },
   "distribution": {
-    "coreVersion": "1.4.7",
-    "androidVersion": "0.20.6",
-    "pwaVersion": "1.4.7",
-    "iosVersion": "0.3.6"
+    "coreVersion": "1.4.8",
+    "androidVersion": "0.20.7",
+    "pwaVersion": "1.4.8",
+    "iosVersion": "0.3.7"
   },
   "managementPresentation": {
     "profitMetric": "closed-trade-realized-signed",
@@ -68,6 +68,7 @@
     "usdtInitialTomanPerVenue": 100000000,
     "usdtInitialAssetPerVenue": 200,
     "usdtUnit": "USDT",
+    "usdtPaperSourceTimeGate": "verified-exchange-event-time",
     "endpoint": "https://zargard-pwa.ihamedcs.chatgpt.site/api/market-signals"
   },
   "retention": {

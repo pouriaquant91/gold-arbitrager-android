@@ -202,6 +202,22 @@ data class AssetHeartbeat(
     val sourceCount: Int,
     val errorCount: Int,
     val checkedAt: String,
+    val diagnostics: UsdtDiagnostics? = null,
+)
+
+data class UsdtDiagnostics(
+    val requestedBooks: Int,
+    val admittedBooks: Int,
+    val transportFailures: Int,
+    val invalidBooks: Int,
+    val insufficientDepthBooks: Int,
+    val outlierBooks: Int,
+    val candidateRoutes: Int,
+    val nonpositiveGross: Int,
+    val feesAndVat: Int,
+    val executionReserve: Int,
+    val rebalanceAndSettlement: Int,
+    val positiveRoutes: Int,
 )
 
 data class ServerStrategyState(
