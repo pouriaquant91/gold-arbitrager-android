@@ -1,11 +1,14 @@
 {
-  "schemaVersion": 10,
-  "updatedAt": "2026-09-26T13:00:00Z",
+  "schemaVersion": 12,
+  "updatedAt": "2026-09-28T16:10:00Z",
   "productName": "RASAD",
   "strategy": {
     "minimumNetProfitRate": 0.005,
     "minimumNetProfitBasis": "lower-leg-notional",
-    "minimumNetProfitScope": "per-order",
+    "minimumNetProfitScope": "per-market-per-order",
+    "minimumNetProfitRates": {"gold": 0.005, "silver": 0.005, "copper": 0.005, "usdt": 0.005, "fund-pairs": 0},
+    "thresholdWriteRole": "root",
+    "fundThresholdScope": "research-only",
     "initialTomanBalancePerVenue": 50000000,
     "inventoryStateVersion": 2,
     "stateStorage": "server-d1",
@@ -45,15 +48,15 @@
     "missingFeeds": 16
   },
   "distribution": {
-    "coreVersion": "1.4.3",
-    "androidVersion": "0.20.3",
-    "pwaVersion": "1.4.3",
-    "iosVersion": "0.3.3"
+    "coreVersion": "1.4.7",
+    "androidVersion": "0.20.6",
+    "pwaVersion": "1.4.7",
+    "iosVersion": "0.3.6"
   },
   "managementPresentation": {
-    "profitMetric": "closed-trade-realized-positive-only",
+    "profitMetric": "closed-trade-realized-signed",
     "downsideMetric": "investment-risk",
-    "negativeValuesVisible": false,
+    "negativeValuesVisible": true,
     "rawLedgerPreserved": true
   },
   "multiAsset": {

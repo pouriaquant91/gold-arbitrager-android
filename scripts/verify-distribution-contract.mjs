@@ -21,6 +21,10 @@ assert.match(
   new RegExp(`versionName = "${contract.distribution.androidVersion}"`),
 );
 assert.ok(ui.includes('ModalNavigationDrawer('));
+const funds = ui.slice(ui.indexOf('private fun FundPairsPage'), ui.indexOf('private fun FundPairsPage') + 6000);
+assert.ok(!/\bNAV\b/.test(funds), 'fund view must not restore the removed NAV label');
+assert.ok(funds.includes('قیمت خرید هر واحد (ریال)'));
+assert.ok(funds.includes('قیمت فروش هر واحد (ریال)'));
 assert.ok(ui.includes('"طلای ۱۸ عیار"'));
 assert.ok(ui.includes('"نقره ۹۹۹"'));
 assert.ok(ui.includes('"مس کاتد"'));
@@ -28,7 +32,7 @@ assert.ok(ui.includes('"USDT / تومان"'));
 assert.ok(ui.includes('"دفتر فرضی سرور"'));
 assert.ok(ui.includes('"بدون سفارش واقعی"'));
 assert.equal(contract.strategy.activePath, 'prefunded-cross-venue-inventory');
-assert.equal(contract.strategy.minimumNetProfitScope, 'per-order');
+assert.equal(contract.strategy.minimumNetProfitScope, 'per-market-per-order');
 assert.equal(contract.strategy.minimumNetProfitRate, 0.005);
 assert.equal(contract.strategy.minimumNetProfitBasis, 'lower-leg-notional');
 assert.equal(contract.strategy.initialTomanBalancePerVenue, 50_000_000);
@@ -45,5 +49,9 @@ assert.equal(contract.multiAsset.usdtInitialTomanPerVenue, 100_000_000);
 assert.equal(contract.multiAsset.usdtInitialAssetPerVenue, 200);
 assert.equal(contract.multiAsset.tradeMode, 'server-paper-ledger');
 assert.equal(contract.identity.visibleInClients, false);
+  assert.equal(contract.schemaVersion, 12);
+assert.equal(contract.managementPresentation.profitMetric, 'closed-trade-realized-signed');
+assert.equal(contract.managementPresentation.negativeValuesVisible, true);
+assert.equal(contract.managementPresentation.rawLedgerPreserved, true);
 
 console.log('Android distribution contract is consistent.');

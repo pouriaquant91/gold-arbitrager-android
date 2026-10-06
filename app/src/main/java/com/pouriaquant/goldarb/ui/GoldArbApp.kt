@@ -308,7 +308,8 @@ fun GoldArbApp(
                     brightness = brightness,
                     fontScale = fontScale,
                     fontFamily = fontFamily,
-                    minimumProfitPercent = state.policy.minimumNetProfitRate * 100,
+                    marketThresholds = state.marketThresholds,
+                    canEditThresholds = state.account?.role == "root",
                     settingsMessage = state.errorMessage,
                     onBiometricChanged = onBiometricChanged,
                     onThemeModeChanged = onThemeModeChanged,
@@ -318,7 +319,7 @@ fun GoldArbApp(
                     onFontFamilyChanged = onFontFamilyChanged,
                     onMinimumProfitPercentChanged = viewModel::setMinimumProfitPercent,
                 )
-                else if (page == AssetPage.FUND_PAIRS) FundPairsPage(state.fundPairs, padding)
+                else if (page == AssetPage.FUND_PAIRS) FundPairsPage(state.fundPairs, padding, state.marketThresholds["fund-pairs"] ?: 0.0)
                 else AssetMarketPage(page, state, padding)
             }
         }
@@ -326,7 +327,7 @@ fun GoldArbApp(
 }
 
 @Composable
-private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
+private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues, thresholdRate: Double) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val checkedAt = report?.checkedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
@@ -338,7 +339,8 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text("۱۳ جفت‌صندوق طلا", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("قیمت خرید و فروش از دفتر سفارش است؛ NAV ارزش هر واحد برای مقایسه است. اختلاف مثبت سود قطعی نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("آستانه پژوهشی سرور: ${String.format(Locale.US, "%.2f", thresholdRate * 100)}٪؛ اجرای صندوق‌ها فعال نیست.")
+                        Text("قیمت خرید و فروش هر واحد از دفتر سفارش است. واحد دو صندوق متفاوت، دارایی یکسان نیست؛ اختلاف نسبی سود قطعی نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("روزهای دادهٔ معتبر: ${report?.validDays ?: 0} (حداقل ${report?.targetValidDays ?: 3})", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(if (report == null) "گزارش سرور در دسترس نیست" else if (fresh) "آخرین بررسی سرور: ${formatFundTime(report.checkedAt)}" else "در انتظار دادهٔ تازه از سرور", color = if (fresh) Positive else Caution)
                     }
@@ -354,21 +356,28 @@ private fun FundPairsPage(report: FundPairReport?, padding: PaddingValues) {
                         listOf(pair.a, pair.b).forEach { symbol ->
                             val quote = quotes[symbol]
                             val bookAt = quote?.observedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
-                            val navAt = quote?.navAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
-                            val quoteFresh = fresh && quote?.marketOpen == true && bookAt != null && navAt != null &&
-                                Duration.between(bookAt, Instant.now()).seconds in 0..120 && Duration.between(navAt, Instant.now()).seconds in 0..300
-                            Text("$symbol · خرید ${quote?.askIrr?.let { formatter.format(it) } ?: "—"} · فروش ${quote?.bidIrr?.let { formatter.format(it) } ?: "—"} · NAV هر واحد ${quote?.navIrr?.let { formatter.format(it) } ?: "—"} ریال", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(if (quoteFresh) "دفتر سفارش و NAV تازه" else "دادهٔ قبلی یا نامعتبر", fontSize = 11.sp, color = if (quoteFresh) Positive else Caution)
+                            val quoteFresh = fresh && quote?.marketOpen == true && bookAt != null &&
+                                Duration.between(bookAt, Instant.now()).seconds in 0..120
+                            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(symbol, fontWeight = FontWeight.Bold)
+                                Text("قیمت خرید هر واحد (ریال)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(quote?.askIrr?.let { formatter.format(it) } ?: "—", fontWeight = FontWeight.Bold)
+                                Text("قیمت فروش هر واحد (ریال)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(quote?.bidIrr?.let { formatter.format(it) } ?: "—", fontWeight = FontWeight.Bold)
+                                Text(if (quoteFresh) "دفتر سفارش تازه" else "بازار بسته یا دفتر سفارش قدیمی است", fontSize = 12.sp, color = if (quoteFresh) Positive else Caution)
+                                Text("زمان دفتر سفارش: ${formatFundTime(quote?.observedAt)}", fontSize = 12.sp)
+                            }
                         }
                         val reason = when (observation?.reason) {
                             "market-closed-or-stale", "market-closed-or-halted" -> "بازار بسته یا داده قدیمی است"
-                            "stale-nav" -> "NAV قدیمی است"
+                            "stale-nav" -> "دادهٔ مبنای مقایسه قدیمی است"
                             "stale-book" -> "دفتر سفارش قدیمی است"
                             "non-synchronous-books" -> "زمان دو دفتر سفارش هم‌خوان نیست"
                             "insufficient-five-level-depth" -> "عمق سفارش برای ۵۰ میلیون تومان کافی نیست"
-                            else -> "دفتر سفارش یا NAV معتبر نیست"
+                            else -> "دادهٔ مقایسه یا دفتر سفارش معتبر نیست"
                         }
                         Text(if (!current) "دادهٔ تازه برای این جفت در دسترس نیست" else if (observation?.status == "blocked") reason else if ((observation?.screenPct ?: 0.0) > 0.0) "اختلاف نسبی پس از کارمزد: ${String.format(Locale.US, "%.4f", observation.screenPct)}٪ · فروش ${observation.sellFund}، خرید ${observation.buyFund}" else "اختلاف مثبت پس از کارمزد دیده نشد")
+                        if (current && observation?.status == "observed" && (observation.screenPct ?: 0.0) > 0 && (observation.screenPct ?: 0.0) < thresholdRate * 100) Text("کمتر از آستانه پژوهشی سرور", color = Caution)
                         Text("معاملهٔ فرضی ثبت نشده${observation?.sampledAt?.let { " · آخرین نمونه: ${formatFundTime(it)}" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
@@ -424,6 +433,7 @@ private fun AssetMarketPage(page: AssetPage, state: GoldArbUiState, padding: Pad
         item {
             ReferenceMarketCard(page, referencePrice, usdReference)
         }
+        item { Text("آستانه جاری سرور: ${String.format(Locale.US, "%.2f", (state.marketThresholds[page.key] ?: 0.005) * 100)}٪ سود خالص؛ هزینه‌ها مستقل‌اند و تاریخچه تغییر نمی‌کند.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item { VenuePriceList(page, priceItems, state.isLoading, state.serverConnected) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp)) {
@@ -535,10 +545,12 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     var cumulative = 0.0
     var peak = 0.0
     var drawdown = 0.0
-    val completedCycles = trades.groupBy { it.signalId }.values.mapNotNull { cycle ->
-        val buy = cycle.firstOrNull { it.side == "buy" }
-        val sell = cycle.firstOrNull { it.side == "sell" }
-        if (buy == null || sell == null) null else cycle.maxOf { it.occurredAt } to (sell.totalToman - buy.totalToman)
+    val completedCycles = trades.distinctBy { it.id }.groupBy { it.signalId }.values.mapNotNull { cycle ->
+        val buys = cycle.filter { it.side == "buy" }
+        val sells = cycle.filter { it.side == "sell" }
+        val valid = cycle.all { it.quantity.isFinite() && it.quantity > 0 && it.totalToman.isFinite() && it.totalToman >= 0 }
+        if (!valid || buys.isEmpty() || sells.isEmpty() || kotlin.math.abs(buys.sumOf { it.quantity } - sells.sumOf { it.quantity }) > 1e-8) null
+        else cycle.maxOf { it.occurredAt } to (sells.sumOf { it.totalToman } - buys.sumOf { it.totalToman })
     }.sortedBy { it.first }
     completedCycles.forEach { (_, realized) ->
         cumulative += realized
@@ -548,15 +560,15 @@ private fun KpiDashboard(page: AssetPage, signals: List<DisplaySignal>, position
     drawdown = maxOf(drawdown, maxOf(0.0, -profitLoss))
     val drawdownRate = if (tradingCapital > 0) drawdown / tradingCapital else 0.0
     val realizedProfit = completedCycles.sumOf { it.second }
-    val managementProfit = maxOf(0.0, realizedProfit)
+    val unpricedInventory = positions.count { it.asset > 0 && (it.lastPrice == null || !it.lastPrice.isFinite() || it.lastPrice <= 0) }
     val metrics = listOf(
         KpiMetric("سرمایه معاملاتی", money(tradingCapital), "بودجه اولیه دفتر"),
-        KpiMetric("سرمایه درگیر", money(engagedCapital), "ارزش دارایی‌های نگهداری‌شده"),
+        KpiMetric("سرمایه درگیر", money(engagedCapital), if (unpricedInventory > 0) "$unpricedInventory موجودی بدون قیمت؛ جمع ناقص است" else "ارزش با آخرین قیمت ذخیره‌شده؛ نه ارزش زنده"),
         KpiMetric("فرصت شناسایی‌شده", formatter.format(signals.size), "سیگنال‌های مثبت در پنجره گزارش"),
         KpiMetric("فرصت بالای آستانه", formatter.format(aboveThreshold), "عبور از آستانه؛ معامله محسوب نمی‌شود", positive = true),
-        KpiMetric("قابل اجرای واقعی", formatter.format(executionEligible), "موجودی، تازگی، عمق و وقفه تأیید شده", positive = true),
+        KpiMetric("واجد شرایط اجرای فرضی", formatter.format(executionEligible), "موجودی، تازگی، عمق و وقفه تأیید شده؛ نه سفارش واقعی", positive = true),
         KpiMetric("میانگین سود خالص", money(average), "پس از هزینه و اسلیپیج", positive = average > 0),
-        KpiMetric("سود معاملات بسته‌شده", if (completedCycles.isEmpty()) "هنوز ثبت نشده" else money(managementProfit), if (completedCycles.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completedCycles.size)} چرخه کامل خرید و فروش", positive = true),
+        KpiMetric("سود معاملات بسته‌شده", if (completedCycles.isEmpty()) "هنوز ثبت نشده" else money(realizedProfit), if (completedCycles.isEmpty()) "خرید یک‌طرفه سود تحقق‌یافته نیست" else "${formatter.format(completedCycles.size)} چرخه کامل خرید و فروش", positive = realizedProfit > 0, warning = realizedProfit < 0),
         KpiMetric("ریسک سرمایه‌گذاری", money(drawdown), "بیشترین کاهش ارزش از اوج · ${percent(drawdownRate)}"),
     )
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -843,7 +855,8 @@ private fun SettingsPage(
     brightness: AppBrightness,
     fontScale: AppFontScale,
     fontFamily: AppFontFamily,
-    minimumProfitPercent: Double,
+    marketThresholds: Map<String, Double>,
+    canEditThresholds: Boolean,
     settingsMessage: String?,
     onBiometricChanged: (Boolean) -> Unit,
     onThemeModeChanged: (AppThemeMode) -> Unit,
@@ -851,9 +864,10 @@ private fun SettingsPage(
     onBrightnessChanged: (AppBrightness) -> Unit,
     onFontScaleChanged: (AppFontScale) -> Unit,
     onFontFamilyChanged: (AppFontFamily) -> Unit,
-    onMinimumProfitPercentChanged: (Double) -> Unit,
+    onMinimumProfitPercentChanged: (String, Double) -> Unit,
 ) {
-    var thresholdDraft by remember(minimumProfitPercent) { mutableFloatStateOf(minimumProfitPercent.toFloat().coerceIn(0f, 10f)) }
+    var thresholdMarket by remember { mutableStateOf("gold") }
+    var thresholdDraft by remember(thresholdMarket, marketThresholds) { mutableFloatStateOf(((marketThresholds[thresholdMarket] ?: 0.005)*100).toFloat().coerceIn(0f, 100f)) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize()) {
@@ -886,24 +900,32 @@ private fun SettingsPage(
         }
         item { SettingSwitch(Icons.Rounded.Fingerprint, "قفل اثر انگشت", if (biometricAvailable) "قفل محلی برنامه" else "در این دستگاه در دسترس نیست", biometricEnabled, biometricAvailable, onBiometricChanged) }
         item {
-            SettingsGroup(Icons.Rounded.Analytics, "آستانه معامله فرضی", "سیگنال‌های مثبت مستقل از آستانه نمایش داده می‌شوند؛ آستانه فقط اجرای فرضی را کنترل می‌کند.") {
+            SettingsGroup(Icons.Rounded.Analytics, "آستانه مستقل هر بازار", "سیگنال مثبت مستقل از آستانه نمایش داده می‌شود؛ آستانه فقط اجرای فرضی جدید را کنترل می‌کند. صندوق‌ها فقط پژوهشی‌اند.") {
+                listOf("gold" to "طلا", "silver" to "نقره", "copper" to "مس", "usdt" to "تتر", "fund-pairs" to "جفت‌صندوق‌ها (پژوهشی)").forEach { (key, label) ->
+                    Button(onClick = { thresholdMarket = key }, modifier = Modifier.fillMaxWidth()) {
+                        Text((if (thresholdMarket == key) "✓ " else "") + label)
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("حداقل سود خالص")
+                    Text(if (thresholdMarket == "fund-pairs") "حداقل اختلاف نسبی پژوهشی" else "حداقل سود خالص")
                     Spacer(Modifier.weight(1f))
-                    Text("${String.format(Locale.US, "%.1f", thresholdDraft)}٪", fontWeight = FontWeight.Black)
+                    Text("${String.format(Locale.US, "%.2f", thresholdDraft)}٪", fontWeight = FontWeight.Black)
                 }
                 Slider(
                     value = thresholdDraft,
                     onValueChange = { thresholdDraft = it },
-                    valueRange = 0f..10f,
-                    steps = 99,
+                    valueRange = 0f..100f,
+                    steps = 9999,
+                    enabled = canEditThresholds,
                 )
                 Button(
-                    onClick = { onMinimumProfitPercentChanged(thresholdDraft.toDouble()) },
+                    onClick = { onMinimumProfitPercentChanged(thresholdMarket, thresholdDraft.toDouble()) },
+                    enabled = canEditThresholds,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("ذخیره آستانه روی سرور")
+                    Text("اعمال آستانهٔ این بازار روی سرور")
                 }
+                Text(if (canEditThresholds) "هر بازار مستقل ذخیره می‌شود؛ هزینه‌ها و سوابق تغییر نمی‌کنند." else "اعمال روی انجین فقط با دسترسی مدیر مجاز است.")
             }
         }
         item {

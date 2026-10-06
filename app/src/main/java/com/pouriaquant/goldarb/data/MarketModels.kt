@@ -213,6 +213,7 @@ data class ServerStrategyState(
     val positions: Map<String, VenuePosition>,
     val portfolio: PortfolioSummary,
     val trades: List<InventoryTrade> = emptyList(),
+    val minimumProfitRates: Map<String, Double> = emptyMap(),
 )
 
 data class InventoryTrade(

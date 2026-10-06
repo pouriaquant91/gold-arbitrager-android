@@ -7,7 +7,7 @@ import java.time.Instant
 
 interface MarketRepository {
     fun refresh(): MarketSnapshot
-    fun updateMinimumProfitRate(rate: Double, token: String): ServerStrategyState
+    fun updateMinimumProfitRate(rate: Double, token: String, market: String = "gold"): ServerStrategyState
     fun account(token: String): AccountUser?
     fun login(identifier: String, password: String): AuthSession
     fun register(username: String, email: String, displayName: String, password: String): AuthSession
@@ -503,6 +503,12 @@ class PublicFeedMarketRepository : MarketRepository {
             schemaVersion = 2,
             storage = "server",
             minimumProfitRate = payload.getDouble("minimumProfitRate"),
+            minimumProfitRates = listOf("gold", "silver", "copper", "usdt", "fund-pairs").associateWith { market ->
+                val value = payload.optJSONObject("minimumProfitRates")?.optDouble(market, Double.NaN)
+                if (value != null && value.isFinite() && value in 0.0..1.0) value
+                else if (market == "gold") payload.getDouble("minimumProfitRate")
+                else if (market == "fund-pairs") 0.0 else 0.005
+            },
             revision = payload.getLong("revision"),
             updatedAt = payload.optString("updatedAt").takeIf { it.isNotBlank() && it != "null" },
             positions = positions,
@@ -520,10 +526,10 @@ class PublicFeedMarketRepository : MarketRepository {
         getJson("$SERVER_BASE_URL/api/strategy-state"),
     )
 
-    override fun updateMinimumProfitRate(rate: Double, token: String): ServerStrategyState = parseStrategyState(
+    override fun updateMinimumProfitRate(rate: Double, token: String, market: String): ServerStrategyState = parseStrategyState(
         postJson(
             "$SERVER_BASE_URL/api/strategy-state",
-            JSONObject().put("action", "settings").put("minimumProfitRate", rate),
+            JSONObject().put("action", "settings").put("market", market).put("minimumProfitRate", rate),
             token,
         ),
     )
